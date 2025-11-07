@@ -1,0 +1,39 @@
+import React from 'react';
+import { Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
+
+const Footer = () => {
+  const socialLinks = [
+    { icon: Facebook, name: 'Facebook', url: 'https://www.facebook.com/ONPEoficial/' },
+    { icon: Twitter, name: 'Twitter', url: 'https://twitter.com/onpe_oficial' },
+    { icon: Instagram, name: 'Instagram', url: 'https://www.instagram.com/onpe_oficial/' },
+    { icon: Youtube, name: 'YouTube', url: 'https://www.youtube.com/user/onpeprensa' },
+  ];
+
+  return (
+    <footer className="w-full bg-background/50 backdrop-blur-sm border-t border-white/10 mt-16">
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
+          <div className="flex space-x-6">
+            <a href="https://www.onpe.gob.pe/portal/politica-de-privacidad/" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-400 hover:text-white transition-colors">Política de privacidad</a>
+            <a href="https://www.onpe.gob.pe/portal/" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-400 hover:text-white transition-colors">Términos de uso</a>
+            <a href="https://www.onpe.gob.pe/portal/ayuda/" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-400 hover:text-white transition-colors">Ayuda</a>
+          </div>
+          <div className="flex space-x-6">
+            {socialLinks.map((social) => (
+              <a key={social.name} href={social.url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">
+                <span className="sr-only">{social.name}</span>
+                <social.icon className="h-6 w-6" aria-hidden="true" />
+              </a>
+            ))}
+          </div>
+        </div>
+        <div className="mt-8 text-center text-sm text-gray-500">
+          <p>&copy; {new Date().getFullYear()} Sistema de Votación Ciudadana del Perú. Todos los derechos reservados.</p>
+          <p className="mt-1">Desarrollado en colaboración con la Oficina Nacional de Procesos Electorales (ONPE).</p>
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+export default Footer;

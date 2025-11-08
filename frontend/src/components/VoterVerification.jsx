@@ -8,7 +8,8 @@ import { useVoterData } from '@/hooks/useVoterData';
 import { useToast } from '@/ui/use-toast';
 
 
-const VoterVerification = () => {
+// --- 1. PRIMER CAMBIO: Acepta la prop 'onVerificationSuccess' ---
+const VoterVerification = ({ onVerificationSuccess }) => {
   const { 
     dni, 
     voterData, 
@@ -20,11 +21,16 @@ const VoterVerification = () => {
   } = useVoterData();
   const { toast } = useToast();
 
+  // --- 2. SEGUNDO CAMBIO: Llama a la función 'onVerificationSuccess' ---
   const handleContinue = () => {
     toast({
       title: '🚧 Votación en Proceso',
       description: 'Serás redirigido al módulo de votación. ¡Gracias por participar! 🚀',
     });
+    
+    // ¡AQUÍ ESTÁ LA LÍNEA QUE FALTABA!
+    // Esto le "avisa" al App.jsx que debe cambiar de vista.
+    onVerificationSuccess(); 
   };
 
   return (
@@ -105,6 +111,7 @@ const VoterVerification = () => {
                 </div>
 
                 {voterData.status === 'Habilitado para votar' && (
+                  // Este botón ahora llama a 'handleContinue', que está modificado
                   <Button onClick={handleContinue} className="w-full mt-4 h-12 text-lg font-bold bg-green-600 hover:bg-green-700">
                     Ingresar al proceso de votación <ArrowRight className="ml-2 h-5 w-5"/>
                   </Button>

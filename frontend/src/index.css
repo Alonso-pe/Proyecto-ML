@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 13% 10%; /* Dark Blue */
+    --foreground: 210 40% 98%; /* White */
+    --card: 220 13% 15%;
+    --card-foreground: 210 40% 98%;
+    --popover: 220 13% 10%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 349 75% 50%; /* Red */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 25.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 349 75% 50%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* --- AQUÍ ESTÁ LA REGLA ÚNICA Y CORRECTA --- */
+  body {
+    /* Aplica fondo oscuro Y texto blanco */
+    @apply bg-background text-foreground; 
+    
+    font-family: 'Inter', sans-serif;
+
+    /* Tus gradientes */
+    background-image: 
+      radial-gradient(at 10% 10%, hsla(349, 75%, 50%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 90% 80%, hsla(0, 0%, 100%, 0.08) 0px, transparent 50%);
+  }
+}

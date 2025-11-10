@@ -1,64 +1,154 @@
+// frontend/src/admin/AdminLayout.jsx
+
 import React, { useState } from 'react';
-import { Users, Database, Trash2, Cpu, Play, FileText, LogOut } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { 
+  LayoutGrid, 
+  Database, 
+  Trash2, 
+  FileText, 
+  LogOut, 
+  Bell,
+  BarChartHorizontal,
+  ChevronRight,
+  Settings,
+  BookDown // <-- Icono para Reportes
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Dashboard from './pages/Dashboard';
 import DataUpload from './pages/DataUpload';
 import Cleaning from './pages/Cleaning';
-import Training from './pages/Training';
-import Results from './pages/Results';
 import VotesReal from './pages/VotesReal';
 import ElectionResults from './pages/ElectionResults';
+import Reportes from './pages/Reportes'; // <-- 1. IMPORTAR NUEVA PÁGINA
 import { Button } from '@/ui/button';
 
+// 2. AÑADIR REPORTES AL MENÚ
 const nav = [
-  { id: 'dashboard', label: 'Dashboard', icon: Users },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
   { id: 'upload', label: 'Carga de Datos', icon: Database },
   { id: 'cleaning', label: 'Limpieza', icon: Trash2 },
-  { id: 'training', label: 'Entrenamiento', icon: Cpu },
-  { id: 'results', label: 'Resultados Entrenamiento', icon: Play },
   { id: 'votes', label: 'Votos Reales', icon: FileText },
-  { id: 'elections', label: 'Resultados Electorales', icon: FileText }
+  { id: 'elections', label: 'Resultados', icon: BarChartHorizontal },
+  { id: 'reportes', label: 'Reportes', icon: BookDown }, // <-- AÑADIDO
 ];
+
+function Sidebar({ active, setActive, onLogout }) {
+  return (
+    <aside className="w-64 bg-card border-r border-border flex flex-col p-6">
+      <div className="flex items-center space-x-3 mb-10">
+        <div className="w-10 h-10 bg-gradient-to-br from-primary to-red-600 rounded-lg flex items-center justify-center">
+          <span className="font-bold text-xl text-white">V</span>
+        </div>
+        <h2 className="text-xl font-bold text-white">Sala de Control</h2>
+      </div>
+      
+      <nav className="flex-1 space-y-2">
+        {nav.map((item) => {
+          const Icon = item.icon;
+          const isActive = active === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActive(item.id)}
+              className={`
+                w-full flex items-center space-x-3 py-3 px-4 rounded-lg
+                transition-all duration-200 group relative
+                ${isActive 
+                  ? 'text-white' 
+                  : 'text-muted-foreground hover:text-white hover:bg-accent'}
+              `}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="active-pill"
+                  className="absolute inset-0 bg-primary/20 rounded-lg"
+                  transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                />
+              )}
+              <Icon className={`h-5 w-5 z-10 ${isActive ? 'text-primary' : ''}`} />
+              <span className="font-medium z-10">{item.label}</span>
+              <ChevronRight className={`h-4 w-4 ml-auto z-10 transition-transform ${isActive ? 'translate-x-0 opacity-100' : '-translate-x-1 opacity-0'} group-hover:translate-x-0 group-hover:opacity-100`} />
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="mt-auto">
+        <Button variant="ghost" className="w-full justify-start space-x-3 text-muted-foreground hover:text-white" onClick={onLogout}>
+          <LogOut className="h-5 w-5" />
+          <span className="font-medium">Cerrar Sesión</span>
+        </Button>
+      </div>
+    </aside>
+  );
+}
+
+function AdminHeader({ title }) {
+  return (
+    <header className="flex items-center justify-between h-20 mb-8">
+      <div>
+        <h1 className="text-4xl font-extrabold text-white">
+          {title}
+        </h1>
+        <p className="text-lg text-muted-foreground">
+          Panel de gestión de votaciones (Modo Simulación)
+        </p>
+      </div>
+      <div className="flex items-center space-x-3">
+        <Button variant="outline" size="icon" className="bg-card border-border text-muted-foreground hover:text-white hover:border-primary">
+          <Settings className="h-5 w-5" />
+        </Button>
+        <Button variant="outline" size="icon" className="bg-card border-border text-muted-foreground hover:text-white hover:border-primary relative">
+          <Bell className="h-5 w-5" />
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-card" />
+        </Button>
+        <div className="flex items-center space-x-3 p-2 rounded-lg bg-card border border-border">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-red-600 flex items-center justify-center">
+            <span className="text-white font-bold">A</span>
+          </div>
+          <div className="hidden md:block">
+            <div className="font-semibold text-white text-sm">Administrador</div>
+            <div className="text-xs text-muted-foreground">admin@onpe.gob.pe</div>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
 
 export default function AdminLayout({ onLogout }) {
   const [active, setActive] = useState('dashboard');
 
-  return (
-    <div className="min-h-screen flex bg-background text-white">
-      <aside className="w-72 p-6 border-r border-white/10 bg-card/40">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-xl font-bold">Admin Panel</h2>
-            <p className="text-sm text-gray-300">Gestión de votaciones — modo mock</p>
-          </div>
-          <div>
-            <Button variant="ghost" size="icon" onClick={onLogout}><LogOut className="h-5 w-5" /></Button>
-          </div>
-        </div>
-        <nav className="space-y-2">
-          {nav.map((n) => {
-            const Icon = n.icon;
-            return (
-              <button key={n.id} onClick={() => setActive(n.id)} className={`w-full text-left py-2 px-3 rounded-md flex items-center space-x-3 hover:bg-white/5 ${active===n.id? 'bg-white/5':''}`}>
-                <Icon className="h-5 w-5 text-primary" />
-                <span className="font-medium">{n.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-        <div className="mt-6 text-sm text-gray-400">Estado: <span className="text-white">Mock</span></div>
-      </aside>
+  const CurrentPage = () => {
+    if (active === 'dashboard') return <Dashboard />;
+    if (active === 'upload') return <DataUpload onNext={() => setActive('cleaning')} />;
+    if (active === 'cleaning') return <Cleaning />;
+    if (active === 'votes') return <VotesReal />;
+    if (active === 'elections') return <ElectionResults />;
+    if (active === 'reportes') return <Reportes />; // <-- 3. RENDERIZAR NUEVA PÁGINA
+    return <Dashboard />;
+  };
 
-      <main className="flex-1 p-6">
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          {active === 'dashboard' && <Dashboard />}
-          {active === 'upload' && <DataUpload onNext={() => setActive('cleaning')} />}
-          {active === 'cleaning' && <Cleaning />}
-          {active === 'training' && <Training />}
-          {active === 'results' && <Results />}
-          {active === 'votes' && <VotesReal />}
-          {active === 'elections' && <ElectionResults />}
-        </motion.div>
+  const getActiveLabel = () => {
+    return nav.find(item => item.id === active)?.label || 'Dashboard';
+  }
+
+  return (
+    <div className="min-h-screen flex bg-background text-foreground">
+      <Sidebar active={active} setActive={setActive} onLogout={onLogout} />
+      <main className="flex-1 p-10 overflow-y-auto">
+        <AdminHeader title={getActiveLabel()} />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={active}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+          >
+            <CurrentPage />
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   );

@@ -1,10 +1,21 @@
+// frontend/src/admin/pages/Cleaning.jsx
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/ui/card';
 import DataTable from '../components/DataTable';
+import { Button } from '@/ui/button';
+import { motion } from 'framer-motion';
+import { loadJSON } from '../utils/dataUtils'; // Importamos el loadJSON
 
-function loadRaw(type){
-  try{ return JSON.parse(localStorage.getItem(`${type}_raw`)||'[]'); }catch(e){return []}
-}
+// Animaciones
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+};
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1 },
+};
 
 export default function Cleaning(){
   const [presRaw, setPresRaw] = useState([]);
@@ -12,13 +23,12 @@ export default function Cleaning(){
   const [munRaw, setMunRaw] = useState([]);
 
   useEffect(()=>{
-    setPresRaw(loadRaw('presidenciales'));
-    setCongRaw(loadRaw('congresales'));
-    setMunRaw(loadRaw('municipales'));
+    setPresRaw(loadJSON('presidenciales_raw') || []); // Usamos loadJSON
+    setCongRaw(loadJSON('congresales_raw') || []); // Usamos loadJSON
+    setMunRaw(loadJSON('municipales_raw') || []); // Usamos loadJSON
   },[]);
 
   const cleanDataset = (rows) => {
-    // Mock cleaning: remove exact duplicates and rows missing 'dni' or 'voto'
     const seen = new Set();
     const clean = [];
     const removed = [];
@@ -27,7 +37,6 @@ export default function Cleaning(){
       if (seen.has(key)) { removed.push({...r, reason:'duplicate'}); return; }
       seen.add(key);
       if (!r.dni || !r.voto) { removed.push({...r, reason:'missing'}); return; }
-      // Normalize: lowercase candidate
       const normalized = {...r, candidato: r.candidato? String(r.candidato).trim().toLowerCase(): r.candidato };
       clean.push(normalized);
     });
@@ -39,40 +48,39 @@ export default function Cleaning(){
     const c = cleanDataset(congRaw); localStorage.setItem('congresales_clean', JSON.stringify(c.clean)); localStorage.setItem('congresales_removed', JSON.stringify(c.removed));
     const m = cleanDataset(munRaw); localStorage.setItem('municipales_clean', JSON.stringify(m.clean)); localStorage.setItem('municipales_removed', JSON.stringify(m.removed));
     alert('Limpieza aplicada (mock). Se generaron tablas clean y removed.');
-    setTimeout(()=>{
-      setPresRaw(loadRaw('presidenciales'));
-      setCongRaw(loadRaw('congresales'));
-      setMunRaw(loadRaw('municipales'));
-    },300);
+    window.location.reload();
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Limpieza de Datos (visual)</h2>
-      <p className="text-gray-300">Revise los datos antes y después. Presione <strong>Limpiar datos</strong> para aplicar las reglas de mock: eliminar duplicados, manejar nulos y normalizar nombres.</p>
+    <motion.div 
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.div variants={itemVariants} className="flex justify-between items-center">
+        <p className="text-muted-foreground max-w-2xl">
+          Revise los datos cargados desde su CSV. Presione <strong>Limpiar datos</strong> para aplicar las reglas de mock: eliminar duplicados, manejar nulos y normalizar.
+        </p>
+        <Button className="bg-primary text-primary-foreground font-semibold text-base py-6 px-6" onClick={handleCleanAll}>
+          Ejecutar Limpieza de Datos
+        </Button>
+      </motion.div>
 
-      <div className="flex justify-end">
-        <button className="px-4 py-2 rounded bg-primary" onClick={handleCleanAll}>Limpiar datos</button>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader><CardTitle>Presidenciales — raw (preview)</CardTitle></CardHeader>
+      <motion.div variants={itemVariants} className="grid md:grid-cols-3 gap-6">
+        <Card className="bg-card/80 border-border backdrop-blur-sm">
+          <CardHeader><CardTitle>Presidenciales — RAW (preview)</CardTitle></CardHeader>
           <CardContent><DataTable rows={presRaw.slice(0,20)} /></CardContent>
         </Card>
-
-        <Card>
-          <CardHeader><CardTitle>Congresales — raw (preview)</CardTitle></CardHeader>
+        <Card className="bg-card/80 border-border backdrop-blur-sm">
+          <CardHeader><CardTitle>Congresales — RAW (preview)</CardTitle></CardHeader>
           <CardContent><DataTable rows={congRaw.slice(0,20)} /></CardContent>
         </Card>
-
-        <Card>
-          <CardHeader><CardTitle>Municipales — raw (preview)</CardTitle></CardHeader>
+        <Card className="bg-card/80 border-border backdrop-blur-sm">
+          <CardHeader><CardTitle>Municipales — RAW (preview)</CardTitle></CardHeader>
           <CardContent><DataTable rows={munRaw.slice(0,20)} /></CardContent>
         </Card>
-      </div>
-
-      <div className="text-sm text-gray-400">Después de limpiar, revise las tablas *_clean y *_removed en localStorage (mock).</div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

@@ -1,13 +1,15 @@
+// frontend/src/admin/pages/DataUpload.jsx
+
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/ui/card';
+import { Card, CardContent } from '@/ui/card';
 import FileUploader from '../components/FileUploader';
-import { ArrowRight, Database } from 'lucide-react';
+import { ArrowRight, FileCheck, Info } from 'lucide-react';
+import { Button } from '@/ui/button';
 
 export default function DataUpload({ onNext }) {
   const [status, setStatus] = useState('idle');
 
   const handleFiles = (parsed) => {
-    // Guardar en localStorage simulando diferentes tipos de elección
     localStorage.setItem('presidenciales_raw', JSON.stringify(parsed));
     localStorage.setItem('congresales_raw', JSON.stringify(parsed));
     localStorage.setItem('municipales_raw', JSON.stringify(parsed));
@@ -32,38 +34,34 @@ export default function DataUpload({ onNext }) {
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-8 space-y-6">
-      <div className="text-center space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Carga de Datos</h2>
-        <p className="text-gray-500 dark:text-gray-400">
-          Sube un archivo CSV con los datos electorales para comenzar el análisis
-        </p>
-      </div>
-
-      <Card className="border-2 border-dashed">
-        <CardContent className="pt-6">
+    <div className="max-w-4xl mx-auto space-y-8">
+      <Card className="bg-card/80 border-border backdrop-blur-sm shadow-xl">
+        <CardContent className="pt-8">
           <FileUploader onParsed={handleFiles} />
         </CardContent>
       </Card>
 
-      <div className="flex items-center justify-between px-4">
-        <div className="flex items-center gap-2 text-sm">
-          <Database className="w-4 h-4" />
-          <span className="text-gray-500">
-            {status === 'idle' && 'Esperando archivo...'}
-            {status === 'uploaded' && 'Archivo procesado correctamente'}
-            {status === 'sample-loaded' && 'Datos de ejemplo cargados'}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {status === 'idle' && <Info className="w-5 h-5 text-blue-400" />}
+          {status === 'uploaded' && <FileCheck className="w-5 h-5 text-green-500" />}
+          {status === 'sample-loaded' && <FileCheck className="w-5 h-5 text-green-500" />}
+          
+          <span>
+            {status === 'idle' && 'Esperando archivo CSV para análisis...'}
+            {status === 'uploaded' && 'Archivo procesado. Listo para limpiar.'}
+            {status ==='sample-loaded' && 'Datos de ejemplo cargados. Listo para limpiar.'}
           </span>
         </div>
         
-        <button
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg
-                     bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+        <Button
+          variant="outline"
+          className="bg-card/80 border-border text-primary hover:text-primary hover:border-primary hover:bg-accent"
           onClick={loadSample}
         >
           Usar datos de ejemplo
-          <ArrowRight className="w-4 h-4" />
-        </button>
+          <ArrowRight className="w-4 h-4 ml-2" />
+        </Button>
       </div>
     </div>
   );

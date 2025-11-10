@@ -1,7 +1,9 @@
+// frontend/src/admin/components/FileUploader.jsx
+
 import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
-import { Upload, CheckCircle } from 'lucide-react';
+import { CheckCircle, FileUp } from 'lucide-react';
 
 export default function FileUploader({ onParsed }) {
   const onDrop = useCallback((acceptedFiles) => {
@@ -30,14 +32,14 @@ export default function FileUploader({ onParsed }) {
     <div 
       {...getRootProps()} 
       className={`
-        border-2 border-dashed rounded-lg p-8
-        transition-colors duration-200 ease-in-out
+        border-2 border-dashed rounded-xl p-12
+        transition-all duration-300 ease-in-out
         flex flex-col items-center justify-center
         min-h-[300px] w-full
-        cursor-pointer
+        cursor-pointer outline-none
         ${isDragActive 
-          ? 'border-primary bg-primary/5' 
-          : 'border-gray-600 hover:border-primary/50 dark:border-gray-700'
+          ? 'border-primary bg-primary/10 shadow-2xl shadow-primary/10' // Resplandor rojo al arrastrar
+          : 'border-border bg-background hover:border-primary/50' // Estado normal
         }
         ${acceptedFiles.length > 0 ? 'bg-green-500/5 border-green-500' : ''}
       `}
@@ -45,21 +47,21 @@ export default function FileUploader({ onParsed }) {
       <input {...getInputProps()} />
       
       {acceptedFiles.length > 0 ? (
-        <div className="text-center space-y-3">
-          <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
-          <p className="text-green-500">Archivo cargado correctamente</p>
-          <p className="text-sm text-gray-500">{acceptedFiles[0].name}</p>
+        <div className="text-center space-y-4">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+          <p className="text-2xl font-semibold text-white">Archivo Aceptado</p>
+          <p className="text-lg text-muted-foreground">{acceptedFiles[0].name}</p>
         </div>
       ) : (
-        <div className="text-center space-y-3">
-          <Upload className="w-12 h-12 text-gray-400 mx-auto" />
-          <p className="text-lg font-medium">
+        <div className="text-center space-y-4">
+          <FileUp className="w-16 h-16 text-muted-foreground mx-auto" />
+          <p className="text-2xl font-semibold text-white">
             {isDragActive 
               ? 'Suelta el archivo aquí' 
-              : 'Arrastra y suelta un archivo CSV'
+              : 'Arrastra y suelta el archivo .CSV'
             }
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-lg text-muted-foreground">
             o haz clic para seleccionar
           </p>
         </div>

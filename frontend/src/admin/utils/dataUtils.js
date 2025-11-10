@@ -1,82 +1,54 @@
-// Utilities to build aggregated mock data for charts from localStorage
+// frontend/src/admin/utils/dataUtils.js
 
-// Datos estáticos para modo mock
+// Datos estáticos para modo mock (los datos "de antes" que sí se veían)
+// HE AÑADIDO MÁS DATOS PARA QUE SE VEA MEJOR
 const STATIC_DATA = {
   presidenciales: {
-    byCandidate: { 'Perez': 1500, 'Gonzales': 1200, 'Lopez': 900 },
-    byRegion: { 'Lima': 2000, 'Arequipa': 800, 'Cusco': 500, 'Trujillo': 300 },
+    byCandidate: { 'Perez': 1500, 'Gonzales': 1200, 'Lopez': 900, 'Martinez': 750, 'Sanchez': 500 },
+    byRegion: { 'Lima': 2000, 'Arequipa': 800, 'Cusco': 500, 'Trujillo': 300, 'Piura': 600 },
     timeMap: {
-      '2025-11-03': 500,
-      '2025-11-04': 600,
-      '2025-11-05': 800,
-      '2025-11-06': 750,
-      '2025-11-07': 950
+      '2025-11-03': 500, '2025-11-04': 600, '2025-11-05': 800, '2025-11-06': 750, '2025-11-07': 950
     }
   },
   congresales: {
-    byCandidate: { 'Partido A': 800, 'Partido B': 600, 'Partido C': 400 },
-    byRegion: { 'Lima': 1000, 'Arequipa': 500, 'Cusco': 300 },
+    byCandidate: { 'Partido A': 1250, 'Partido B': 900, 'Partido C': 1050, 'Partido D': 700 },
+    byRegion: { 'Lima': 1000, 'Arequipa': 500, 'Cusco': 300, 'La Libertad': 450 },
     timeMap: {
-      '2025-11-03': 300,
-      '2025-11-04': 400,
-      '2025-11-05': 500,
-      '2025-11-06': 600
+      '2025-11-03': 300, '2025-11-04': 400, '2025-11-05': 500, '2025-11-06': 600
     }
   },
   municipales: {
     byCandidate: { 'Distrito 1': 400, 'Distrito 2': 300, 'Distrito 3': 200 },
-    byRegion: { 'Lima': 500, 'Trujillo': 400 },
+    byRegion: { 'Lima': 500, 'Trujillo': 400, 'Arequipa': 250 },
     timeMap: {
-      '2025-11-03': 200,
-      '2025-11-04': 300,
-      '2025-11-05': 400
+      '2025-11-03': 200, '2025-11-04': 300, '2025-11-05': 400
     }
+  },
+  // Datos para el mapa (Participación por Departamento)
+  mapData: {
+    'PE-LMA': 85, 'PE-ARE': 78, 'PE-CUS': 75, 'PE-LAL': 72, 'PE-PIU': 70, 'PE-JUN': 68,
+    'PE-PUN': 65, 'PE-CAJ': 63, 'PE-ANC': 60, 'PE-AYA': 58, 'PE-HUV': 55, 'PE-PAS': 54,
+    'PE-HUC': 53, 'PE-APU': 52, 'PE-MOQ': 51, 'PE-TAC': 50, 'PE-TUM': 49, 'PE-LAM': 48,
+    'PE-AMA': 45, 'PE-UCA': 44, 'PE-LOR': 42, 'PE-MDD': 40, 'PE-SMT': 38, 'PE-CAL': 88
   }
 };
 
+// ¡ARREGLO IMPORTANTE!
+// Esta función ahora ignora el localStorage y SIEMPRE devuelve los datos de simulación.
+export function getAggregates(){
+  return {
+    pres: STATIC_DATA.presidenciales,
+    cong: STATIC_DATA.congresales,
+    mun: STATIC_DATA.municipales,
+    mapData: STATIC_DATA.mapData,
+    votes: STATIC_DATA.presidenciales.byRegion, // 'votes_real' usará los datos presidenciales como mock
+    pres_raw: STATIC_DATA.presidenciales.byRegion,
+    cong_raw: STATIC_DATA.congresales.byRegion,
+    mun_raw: STATIC_DATA.municipales.byRegion
+  };
+}
+
+// --- Dejamos estas funciones por si 'Cleaning.jsx' las usa ---
 export function loadJSON(key){
   try{ return JSON.parse(localStorage.getItem(key) || 'null'); }catch(e){ return null; }
-}
-
-function buildFromRows(rows){
-  // expects rows with fields: candidato, region, fecha (optional)
-  const byCandidate = {};
-  const byRegion = {};
-  const timeMap = {};
-  (rows || []).forEach(r=>{
-    const cand = (r.candidato || r.candidate || 'sin_nombre').toString();
-    const reg = (r.region || r.departamento || 'sin_region').toString();
-    const fecha = (r.fecha || r.date || new Date().toISOString().slice(0,10)).toString();
-    byCandidate[cand] = (byCandidate[cand]||0)+1;
-    byRegion[reg] = (byRegion[reg]||0)+1;
-    timeMap[fecha] = (timeMap[fecha]||0)+1;
-  });
-  return { byCandidate, byRegion, timeMap };
-}
-
-export function getAggregates(){
-  // try cleaned first, otherwise raw, otherwise generate synthetic
-  const pres = loadJSON('presidenciales_clean') || loadJSON('presidenciales_raw');
-  const cong = loadJSON('congresales_clean') || loadJSON('congresales_raw');
-  const mun = loadJSON('municipales_clean') || loadJSON('municipales_raw');
-  const votes = loadJSON('votes_real');
-
-  const presAgg = pres ? buildFromRows(pres) : null;
-  const congAgg = cong ? buildFromRows(cong) : null;
-  const munAgg = mun ? buildFromRows(mun) : null;
-  const votesAgg = votes ? buildFromRows(votes) : null;
-
-  // return static mock data
-  function synthetic(type){
-    if (type === 'pres') return STATIC_DATA.presidenciales;
-    if (type === 'cong') return STATIC_DATA.congresales;
-    return STATIC_DATA.municipales;
-  }
-
-  return {
-    pres: presAgg || synthetic('pres'),
-    cong: congAgg || synthetic('cong'),
-    mun: munAgg || synthetic('mun'),
-    votes: votesAgg || synthetic('votes')
-  };
 }

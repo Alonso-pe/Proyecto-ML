@@ -4,7 +4,10 @@ import { Home, HelpCircle, BarChart2, ShieldCheck, Info, Newspaper } from 'lucid
 import { Button } from '@/ui/button';
 import { Link } from 'react-scroll';
 
-const Header = () => {
+const Header = ({ onAdminOpen }) => {
+  // Verificar si el usuario está autenticado como admin
+  const isAdmin = localStorage.getItem('isAdmin') === 'true';
+
   const navItems = [
     { to: 'inicio', label: 'Inicio', icon: Home },
     { to: 'como-votar', label: 'Cómo votar', icon: HelpCircle },
@@ -46,9 +49,18 @@ const Header = () => {
               </Link>
             ))}
           </nav>
-          <div className="md:hidden">
-             {/* Mobile menu can be added here */}
-          </div>
+       <div className="hidden md:flex items-center space-x-2">
+         {isAdmin && (
+           <Button 
+             variant="ghost" 
+             className="text-gray-300 hover:bg-white/10 hover:text-white flex items-center" 
+             onClick={() => onAdminOpen && onAdminOpen()}
+           >
+             <BarChart2 className="h-5 w-5" />
+             <span className="ml-2">Admin</span>
+           </Button>
+         )}
+       </div>
         </div>
       </div>
     </motion.header>

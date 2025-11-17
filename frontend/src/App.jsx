@@ -1,6 +1,6 @@
 // App.jsx (Conectado)
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Link as ScrollLink } from 'react-scroll';
@@ -12,6 +12,7 @@ import Section from '@/components/Section';
 import { Card, CardHeader, CardTitle, CardContent } from '@/ui/card.jsx';
 import { Button } from '@/ui/button.jsx';
 import ElectionSelection from '@/components/ElectionSelection'; 
+import AdminLayout from '@/admin/AdminLayout';
 
 const StepCard = ({
   icon: Icon,
@@ -32,6 +33,7 @@ const StepCard = ({
 function App() {
   
   const [view, setView] = useState('landing');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Función para ir a la selección (la llama VoterVerification)
   const handleVerificationSuccess = () => {
@@ -44,9 +46,14 @@ function App() {
     setView('landing');
   };
 
+  useEffect(() => {
+    const stored = localStorage.getItem('isAdmin');
+    if (stored === 'true') setIsAdmin(true);
+  }, []);
+
   return <div className='min-h-screen flex flex-col bg-background'>
       
-      {view === 'landing' ? (
+  {view === 'landing' ? (
         
         // --- VISTA "LANDING" (INICIO) ---
         <> 
@@ -58,7 +65,13 @@ function App() {
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet" />
           </Helmet>
           
-          <Header />
+          <Header onAdminOpen={() => {
+              if (isAdmin) {
+                setView('admin');
+              } else {
+                setView('admin-login');
+              }
+            }} />
           
           <main className='flex-grow'>
             <section id="inicio" className="relative flex items-center justify-center min-h-screen py-20 px-4">
@@ -133,13 +146,15 @@ function App() {
         </>
         // --- FIN: VISTA "LANDING" ---
 
-      ) : (
-        
-        // --- 2. LÍNEA MODIFICADA ---
-        // Ahora se le pasa la función 'onGoBack'
+      ) : view === 'selection' ? (
         <ElectionSelection onGoBack={handleGoBack} />
-
-      )}
+      ) : view === 'admin-login' && !isAdmin ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <VoterVerification />
+        </div>
+      ) : view === 'admin' && isAdmin ? (
+        <AdminLayout onLogout={() => { localStorage.removeItem('isAdmin'); setIsAdmin(false); setView('landing'); }} />
+      ) : null}
     </div>;
 }
 export default App;

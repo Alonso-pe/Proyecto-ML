@@ -31,6 +31,9 @@ const VoterVerification = ({ onVerificationSuccess }) => {
     handleDniChange, 
     validateDni 
   } = useVoterData();
+
+  // Estado de admin global
+  const [globalAdminState, setGlobalAdminState] = useState(localStorage.getItem('isAdmin') === 'true');
   const { toast } = useToast();
   const [selectedRole, setSelectedRole] = useState('usuario');
   const [adminEmail, setAdminEmail] = useState('');
@@ -54,14 +57,13 @@ const VoterVerification = ({ onVerificationSuccess }) => {
 
   // --- 2. SEGUNDO CAMBIO: Llama a la función 'onVerificationSuccess' ---
   const handleContinue = () => {
-    toast({
-      title: '🚧 Votación en Proceso',
-      description: 'Serás redirigido al módulo de votación. ¡Gracias por participar! 🚀',
-    });
-    
-    // ¡AQUÍ ESTÁ LA LÍNEA QUE FALTABA!
-    // Esto le "avisa" al App.jsx que debe cambiar de vista.
-    onVerificationSuccess(); 
+    if (selectedRole === 'usuario') {
+      toast({
+        title: '🚧 Votación en Proceso',
+        description: 'Serás redirigido al módulo de votación. ¡Gracias por participar! 🚀',
+      });
+      onVerificationSuccess(); // Solo para usuarios normales
+    }
   };
 
   return (
@@ -142,10 +144,26 @@ const VoterVerification = ({ onVerificationSuccess }) => {
 
                   try {
                     setIsAdminLoading(true);
-                    toast({
-                      title: 'Acceso administrativo en desarrollo',
-                      description: 'Próximamente podrás ingresar con tu cuenta institucional.',
-                    });
+                    
+                    // Verificar credenciales de administrador
+                    if (adminEmail === 'admin@onpe.gob.pe' && adminPassword === 'admin123') {
+                      toast({
+                        title: '✅ Acceso correcto',
+                        description: 'Ahora puedes usar el botón "Admin" en la parte superior.',
+                      });
+                      
+                      // Habilitar acceso admin
+                      localStorage.setItem('isAdmin', 'true');
+                      window.location.reload(); // Recargar para mostrar el botón Admin
+                    } else {
+                      setAdminError('Credenciales inválidas. Pruebe con admin@onpe.gob.pe / admin123');
+                      toast({
+                        variant: "destructive",
+                        title: "❌ Error de acceso",
+                        description: "Credenciales incorrectas. Intente nuevamente.",
+                      });
+                    }
+
                   } finally {
                     setIsAdminLoading(false);
                   }

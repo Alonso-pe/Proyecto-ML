@@ -11,9 +11,12 @@ const Section = ({ id, title, children, className }) => {
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-center text-white mb-12">
-            {title}
-          </h2>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-4">
+              {title}
+            </h2>
+            <div className="w-24 h-1 bg-primary mx-auto rounded-full"></div>
+          </div>
           {children}
         </motion.div>
       </div>

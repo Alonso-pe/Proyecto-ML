@@ -21,6 +21,16 @@ const mockVoters = {
     name: 'Brat Ocaña Paredes',
     district: 'Comas, Lima',
     status: 'Habilitado para votar',
+  },
+  '70868955': {
+    name: 'Beatriz Chipillo Mendoza',
+    district: 'Yungay, Ancash',
+    status: 'Habilitado para votar',
+  },
+  '70620660': {
+    name: 'Cristin Andia Chaves',
+    district: 'Barranca, Lima',
+    status: 'Habilitado para votar',
   }
 };
 

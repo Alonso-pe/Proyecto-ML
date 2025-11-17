@@ -1,9 +1,9 @@
 // src/components/ElectionSelection.jsx (Versión Platino 8.0 - Vistas Totalmente Diferenciadas con Descripciones)
 // Implementación con estilos de acento únicos (Azul, Dorado, Verde) y descripciones detalladas para candidatos principales.
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
-import { Gavel, Landmark, Building, ArrowRight, ArrowLeft, BookOpen, CheckCircle } from 'lucide-react'; 
+import { Gavel, Building, Landmark, ArrowRight, ArrowLeft, BookOpen, CheckCircle, Lock } from 'lucide-react'; 
 
 // (Estos son componentes UI ficticios de shadcn/ui. Si no los tienes,
 // puedes reemplazarlos por <div> y <button> estándar de HTML)
@@ -66,7 +66,7 @@ const itemVariants = {
 /**
  * --- SUB-COMPONENTE: Tarjeta 3D Inclinable (Navegación) ---
  */
-const TiltCard = ({ icon: Icon, title, description, onClick }) => {
+const TiltCard = ({ icon: Icon, title, description, onClick, isLocked = false }) => {
   // Lógica para el efecto 3D
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -96,25 +96,45 @@ const TiltCard = ({ icon: Icon, title, description, onClick }) => {
       className="lg:col-span-1"
     >
       <motion.div
-        style={{ rotateX, rotateY }}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+        style={isLocked ? {} : { rotateX, rotateY }}
+        onMouseMove={isLocked ? undefined : handleMouseMove}
+        onMouseLeave={isLocked ? undefined : handleMouseLeave}
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-        onClick={onClick}
-        className="cursor-pointer"
+        onClick={isLocked ? undefined : onClick}
+        className={isLocked ? "cursor-not-allowed" : "cursor-pointer"}
       >
-        <Card className="bg-card/80 border-white/10 shadow-xl h-full flex flex-col backdrop-blur-sm overflow-hidden 
+        <Card className={`bg-card/80 border-white/10 shadow-xl h-full flex flex-col backdrop-blur-sm overflow-hidden 
                          transition-all duration-300 ease-out 
-                         hover:border-primary/50 hover:shadow-primary/20">
+                         ${isLocked 
+                           ? 'opacity-60 border-red-500/30' 
+                           : 'hover:border-primary/50 hover:shadow-primary/20'}`}>
           <CardHeader className="text-center p-8">
-            <Icon className="h-12 w-12 text-primary mx-auto mb-5" />
-            <CardTitle className="text-2xl text-white">{title}</CardTitle>
-            <CardDescription className="text-gray-300 pt-2">{description}</CardDescription>
+            {isLocked ? (
+              <div className="relative">
+                <Icon className="h-12 w-12 text-gray-500 mx-auto mb-5" />
+                <Lock className="h-8 w-8 text-red-400 absolute top-0 right-0 left-0 mx-auto" />
+              </div>
+            ) : (
+              <Icon className="h-12 w-12 text-primary mx-auto mb-5" />
+            )}
+            <CardTitle className={`text-2xl ${isLocked ? 'text-gray-400' : 'text-white'}`}>{title}</CardTitle>
+            <CardDescription className={isLocked ? "text-gray-500 pt-2" : "text-gray-300 pt-2"}>
+              {isLocked ? 'Ya has emitido tu voto en este apartado' : description}
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-6 pt-0 flex-grow flex flex-col justify-end">
             <div className="flex justify-end items-center mt-4">
-              <span className="text-primary text-sm font-semibold">Ver Apartado</span>
-              <ArrowRight className="h-5 w-5 text-primary ml-2" />
+              {isLocked ? (
+                <div className="flex items-center space-x-2 text-red-400">
+                  <Lock className="h-4 w-4" />
+                  <span className="text-sm font-semibold">Bloqueado</span>
+                </div>
+              ) : (
+                <>
+                  <span className="text-primary text-sm font-semibold">Ver Apartado</span>
+                  <ArrowRight className="h-5 w-5 text-primary ml-2" />
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -130,23 +150,30 @@ const TiltCard = ({ icon: Icon, title, description, onClick }) => {
 const ConfirmationModal = ({ isOpen, onClose, voteData, type }) => {
   if (!isOpen || !voteData) return null;
 
-  const title = type === 'generales' ? 'Voto General Confirmado' : type === 'municipales' ? 'Voto Municipal Confirmado' : 'Voto Regional Confirmado';
-  const { primary, secondary } = voteData; // primary: Presidente/Alcalde/Gobernador, secondary: Congreso/Regidores/Consejeros
+  const titleMap = {
+    'presidencial': 'Voto Presidencial Confirmado',
+    'presidente-regional': 'Voto Presidente Regional Confirmado',
+    'alcalde': 'Voto Alcalde Confirmado',
+    'regionales': 'Voto Regional Confirmado'
+  };
+  const title = titleMap[type] || 'Voto Confirmado';
+  const { primary, secondary } = voteData; // primary: Presidente/Presidente Regional/Alcalde
 
   // Determinar los labels y color de acento para el modal
   let primaryLabel, secondaryLabel, accentColor;
-  if (type === 'generales') {
+  if (type === 'presidencial') {
     primaryLabel = 'Presidente';
-    secondaryLabel = 'Congreso';
     accentColor = 'border-primary/40 shadow-primary/30';
-  } else if (type === 'municipales') {
+  } else if (type === 'presidente-regional') {
+    primaryLabel = 'Presidente Regional';
+    accentColor = 'border-slate-500/40 shadow-slate-500/30';
+  } else if (type === 'alcalde') {
     primaryLabel = 'Alcalde';
-    secondaryLabel = 'Regidores';
-    accentColor = 'border-emerald-500/40 shadow-emerald-500/30';
-  } else {
-    primaryLabel = 'Gobernador Regional';
-    secondaryLabel = 'Consejeros Regionales';
-    accentColor = 'border-yellow-500/40 shadow-yellow-500/30';
+    accentColor = 'border-slate-500/40 shadow-slate-500/30';
+  } else if (type === 'regionales') {
+    primaryLabel = 'Alcalde';
+    secondaryLabel = 'Presidente Regional';
+    accentColor = 'border-slate-500/40 shadow-slate-500/30';
   }
 
   return (
@@ -183,10 +210,13 @@ const ConfirmationModal = ({ isOpen, onClose, voteData, type }) => {
                 <p className="text-xl text-white">{primary.name}</p>
                 <p className="text-md text-gray-400">{primary.party}</p>
               </div>
-              <div className="border border-white/20 rounded-lg p-4 bg-white/10 shadow-inner">
-                <p className="text-sm font-semibold text-primary uppercase tracking-wider">{secondaryLabel}</p>
-                <p className="text-xl text-white">{secondary.name}</p>
-              </div>
+              {secondary && (
+                <div className="border border-white/20 rounded-lg p-4 bg-white/10 shadow-inner">
+                  <p className="text-sm font-semibold text-primary uppercase tracking-wider">{secondaryLabel || 'Otro'}</p>
+                  <p className="text-xl text-white">{secondary.name}</p>
+                  {secondary.party && <p className="text-md text-gray-400">{secondary.party}</p>}
+                </div>
+              )}
               <Button 
                 onClick={onClose} 
                 className="w-full h-12 text-lg mt-6 bg-primary hover:bg-primary/90"
@@ -210,7 +240,7 @@ const CandidateCard = ({ candidate, type, isSelected, onSelect }) => {
   const accentClass = useMemo(() => {
     if (type === 'president' || type === 'congress') return 'border-primary shadow-primary/40 ring-primary/30';
     if (type === 'mayor' || type === 'council') return 'border-emerald-500 shadow-emerald-500/40 ring-emerald-500/30';
-    if (type === 'governor' || type === 'councilor') return 'border-yellow-500 shadow-yellow-500/40 ring-yellow-500/30';
+    if (type === 'governor' || type === 'councilor') return 'border-slate-500 shadow-slate-500/40 ring-slate-500/30';
     return 'border-primary shadow-primary/40 ring-primary/30'; // Default
   }, [type]);
 
@@ -269,19 +299,35 @@ const CandidateCard = ({ candidate, type, isSelected, onSelect }) => {
 export default function ElectionSelection({ onGoBack }) {
   
   const [currentView, setCurrentView] = useState('main');
+  const [votedSections, setVotedSections] = useState({
+    presidencial: false,
+    regionales: false
+  });
 
   // --- ESTADOS DE VOTACIÓN ---
   const [selectedPresident, setSelectedPresident] = useState(null);
-  const [selectedCongress, setSelectedCongress] = useState(null);
+  const [selectedRegionalPresident, setSelectedRegionalPresident] = useState(null);
   const [selectedMayor, setSelectedMayor] = useState(null);
-  const [selectedCouncil, setSelectedCouncil] = useState(null);
-  const [selectedGovernor, setSelectedGovernor] = useState(null);
-  const [selectedCouncilor, setSelectedCouncilor] = useState(null);
 
   // --- ESTADO PARA el modal de confirmación ---
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [finalVote, setFinalVote] = useState(null);
-  const [voteType, setVoteType] = useState(null); // 'generales', 'municipales', o 'regionales'
+  const [voteType, setVoteType] = useState(null); // 'presidencial', 'presidente-regional', o 'alcalde'
+
+  // Función para obtener los apartados votados por el DNI actual
+  const getVotedSections = () => {
+    const verifiedDni = localStorage.getItem('verifiedDni');
+    if (!verifiedDni) return { presidencial: false, regionales: false };
+    
+    const votedSectionsData = JSON.parse(localStorage.getItem('votedSectionsByDni') || '{}');
+    return votedSectionsData[verifiedDni] || { presidencial: false, regionales: false };
+  };
+
+  // Verificar qué apartados ya votó al cargar el componente y cuando cambia la vista
+  useEffect(() => {
+    const sections = getVotedSections();
+    setVotedSections(sections);
+  }, [currentView]);
 
 
   /**
@@ -295,89 +341,64 @@ export default function ElectionSelection({ onGoBack }) {
     { id: 'p5', name: 'Julio Guzmán', party: 'Partido Morado', logo: 'PM', imageUrl: 'https://placehold.co/64x64/2D3748/FFFFFF?text=PM&font=lora', description: 'Ex-candidato presidencial. Aboga por políticas progresistas y modernización del sector público.' }
   ];
 
-  const congressionalCandidates = [
-    { id: 'c1', name: 'Fuerza Popular', logo: 'K', imageUrl: 'https://placehold.co/64x64/2D3748/FFFFFF?text=K&font=lora' },
-    { id: 'c2', name: 'Perú Libre', logo: 'PL', imageUrl: 'https://placehold.co/64x64/2D3748/FFFFFF?text=PL&font=lora' },
-    { id: 'c3', name: 'Renovación Popular', logo: 'R', imageUrl: 'https://placehold.co/64x64/2D3748/FFFFFF?text=R&font=lora' },
-    { id: 'c4', name: 'Avanza País', logo: 'AP', imageUrl: 'https://placehold.co/64x64/2D3748/FFFFFF?text=AP&font=lora' },
-    { id: 'c5', name: 'Partido Morado', logo: 'PM', imageUrl: 'https://placehold.co/64x64/2D3748/FFFFFF?text=PM&font=lora' }
-  ];
-
-  const municipalCandidates = {
+  const regionalCandidates = {
+    regionalPresidents: [
+      { id: 'rp1', name: 'Rohel Sánchez', party: 'Yo Arequipa', logo: 'YA', imageUrl: 'https://placehold.co/64x64/E0A800/FFFFFF?text=RP1&font=lora', description: 'Estrategia centrada en el desarrollo de proyectos de irrigación y minería responsable.' },
+      { id: 'rp2', name: 'Elmer Cáceres', party: 'Arequipa Renace', logo: 'AR', imageUrl: 'https://placehold.co/64x64/800080/FFFFFF?text=RP2&font=lora', description: 'Foco en la mejora de la educación rural y la promoción del turismo regional.' },
+      { id: 'rp3', name: 'Werner Salcedo', party: 'Inka Pachakuteq', logo: 'IP', imageUrl: 'https://placehold.co/64x64/008080/FFFFFF?text=RP3&font=lora', description: 'Impulso a la inversión en tecnología y la gestión eficiente de recursos hídricos.' },
+    ],
     mayors: [
       { id: 'm1', name: 'Rafael A. (Alcalde)', party: 'Unión por el Perú', logo: 'UP', imageUrl: 'https://placehold.co/64x64/2B4E8C/FFFFFF?text=UP&font=lora', description: 'Enfoque en infraestructura urbana y transporte público eficiente.' },
       { id: 'm2', name: 'George F. (Alcalde)', party: 'Podemos Perú', logo: 'PP', imageUrl: 'https://placehold.co/64x64/883997/FFFFFF?text=PP&font=lora', description: 'Prioridad en la limpieza pública y descentralización de servicios municipales.' },
       { id: 'm3', name: 'Daniel O. (Alcalde)', party: 'Victoria Nacional', logo: 'VN', imageUrl: 'https://placehold.co/64x64/E37000/FFFFFF?text=VN&font=lora', description: 'Propuestas para fortalecer el comercio local y el apoyo a pequeños empresarios.' },
-    ],
-    council: [ // Voto por la lista de Regidores
-      { id: 'l1', name: 'Lista Regidores UPP', logo: 'UP', imageUrl: 'https://placehold.co/64x64/2B4E8C/FFFFFF?text=UP&font=lora' },
-      { id: 'l2', name: 'Lista Regidores PP', logo: 'PP', imageUrl: 'https://placehold.co/64x64/883997/FFFFFF?text=PP&font=lora' },
-      { id: 'l3', name: 'Lista Regidores VN', logo: 'VN', imageUrl: 'https://placehold.co/64x64/E37000/FFFFFF?text=VN&font=lora' },
     ]
   };
-  
-  const regionalCandidates = {
-    governors: [
-      { id: 'g1', name: 'Rohel Sánchez', party: 'Yo Arequipa', logo: 'YA', imageUrl: 'https://placehold.co/64x64/E0A800/FFFFFF?text=R1&font=lora', description: 'Estrategia centrada en el desarrollo de proyectos de irrigación y minería responsable.' },
-      { id: 'g2', name: 'Elmer Cáceres', party: 'Arequipa Renace', logo: 'AR', imageUrl: 'https://placehold.co/64x64/800080/FFFFFF?text=R2&font=lora', description: 'Foco en la mejora de la educación rural y la promoción del turismo regional.' },
-      { id: 'g3', name: 'Werner Salcedo', party: 'Inka Pachakuteq', logo: 'IP', imageUrl: 'https://placehold.co/64x64/008080/FFFFFF?text=R3&font=lora', description: 'Impulso a la inversión en tecnología y la gestión eficiente de recursos hídricos.' },
-    ],
-    councilors: [ // Voto por la lista de Consejeros Regionales
-      { id: 'c1', name: 'Lista Consejeros YA', logo: 'YA', imageUrl: 'https://placehold.co/64x64/E0A800/FFFFFF?text=R1&font=lora' },
-      { id: 'c2', name: 'Lista Consejeros AR', logo: 'AR', imageUrl: 'https://placehold.co/64x64/800080/FFFFFF?text=R2&font=lora' },
-      { id: 'c3', name: 'Lista Consejeros IP', logo: 'IP', imageUrl: 'https://placehold.co/64x64/008080/FFFFFF?text=R3&font=lora' },
-    ]
-  };
-
 
   /**
-   * --- MANEJADOR: Para emitir el voto General ---
+   * --- MANEJADOR: Para emitir el voto Presidencial ---
    */
-  const handleSubmitGeneralVote = () => {
-    if (!selectedPresident || !selectedCongress) {
-      console.error("Falta selección General");
+  const handleSubmitPresidentialVote = () => {
+    if (!selectedPresident) {
+      console.error("Falta selección Presidencial");
       return;
     }
     
     const pres = presidentialCandidates.find(p => p.id === selectedPresident);
-    const cong = congressionalCandidates.find(c => c.id === selectedCongress);
 
-    setFinalVote({ primary: pres, secondary: cong });
-    setVoteType('generales');
+    setFinalVote({ primary: pres });
+    setVoteType('presidencial');
     setShowConfirmationModal(true);
   };
 
   /**
-   * --- MANEJADOR: Para emitir el voto Municipal ---
+   * --- MANEJADOR: Para emitir el voto de Presidente Regional ---
    */
-  const handleSubmitMunicipalVote = () => {
-    if (!selectedMayor || !selectedCouncil) {
-      console.error("Falta selección Municipal");
+  const handleSubmitRegionalPresidentVote = () => {
+    if (!selectedRegionalPresident) {
+      console.error("Falta selección de Presidente Regional");
       return;
     }
 
-    const mayor = municipalCandidates.mayors.find(m => m.id === selectedMayor);
-    const council = municipalCandidates.council.find(c => c.id === selectedCouncil);
+    const regionalPres = regionalCandidates.regionalPresidents.find(rp => rp.id === selectedRegionalPresident);
 
-    setFinalVote({ primary: mayor, secondary: council });
-    setVoteType('municipales');
+    setFinalVote({ primary: regionalPres });
+    setVoteType('presidente-regional');
     setShowConfirmationModal(true);
   };
-  
+
   /**
-   * --- MANEJADOR: Para emitir el voto Regional ---
+   * --- MANEJADOR: Para emitir el voto de Alcalde ---
    */
-  const handleSubmitRegionalVote = () => {
-    if (!selectedGovernor || !selectedCouncilor) {
-      console.error("Falta selección Regional");
+  const handleSubmitMayorVote = () => {
+    if (!selectedMayor) {
+      console.error("Falta selección de Alcalde");
       return;
     }
 
-    const governor = regionalCandidates.governors.find(g => g.id === selectedGovernor);
-    const councilor = regionalCandidates.councilors.find(c => c.id === selectedCouncilor);
+    const mayor = regionalCandidates.mayors.find(m => m.id === selectedMayor);
 
-    setFinalVote({ primary: governor, secondary: councilor });
-    setVoteType('regionales');
+    setFinalVote({ primary: mayor });
+    setVoteType('alcalde');
     setShowConfirmationModal(true);
   };
 
@@ -386,6 +407,45 @@ export default function ElectionSelection({ onGoBack }) {
    * --- MANEJADOR: Para cerrar el modal y resetear ---
    */
   const handleCloseModal = () => {
+    // Marcar que el usuario ha votado en el apartado específico y guardar el voto
+    const verifiedDni = localStorage.getItem('verifiedDni');
+    const voterInfo = JSON.parse(localStorage.getItem('voterInfo') || '{}');
+    const voterData = voterInfo[verifiedDni] || {};
+    
+    if (verifiedDni && voteType && finalVote) {
+      const votedSectionsData = JSON.parse(localStorage.getItem('votedSectionsByDni') || '{}');
+      
+      if (!votedSectionsData[verifiedDni]) {
+        votedSectionsData[verifiedDni] = { presidencial: false, regionales: false };
+      }
+      
+      // Guardar el voto real
+      const allVotes = JSON.parse(localStorage.getItem('realVotes') || '[]');
+      const voteRecord = {
+        dni: verifiedDni,
+        voterName: voterData.name || 'Usuario',
+        voterDistrict: voterData.district || 'Desconocido',
+        voteType: voteType,
+        candidate: finalVote.primary,
+        secondaryCandidate: finalVote.secondary || null,
+        timestamp: new Date().toISOString()
+      };
+      allVotes.push(voteRecord);
+      localStorage.setItem('realVotes', JSON.stringify(allVotes));
+      
+      // Marcar el apartado correspondiente como votado
+      if (voteType === 'presidencial') {
+        votedSectionsData[verifiedDni].presidencial = true;
+      } else if (voteType === 'presidente-regional' || voteType === 'alcalde' || voteType === 'regionales') {
+        votedSectionsData[verifiedDni].regionales = true;
+      }
+      
+      localStorage.setItem('votedSectionsByDni', JSON.stringify(votedSectionsData));
+      
+      // Actualizar el estado local
+      setVotedSections(votedSectionsData[verifiedDni]);
+    }
+    
     setShowConfirmationModal(false);
     setFinalVote(null);
     setVoteType(null);
@@ -393,79 +453,45 @@ export default function ElectionSelection({ onGoBack }) {
     setCurrentView('main');
     // También reseteamos las selecciones
     setSelectedPresident(null);
-    setSelectedCongress(null);
+    setSelectedRegionalPresident(null);
     setSelectedMayor(null);
-    setSelectedCouncil(null);
-    setSelectedGovernor(null);
-    setSelectedCouncilor(null);
   };
 
   // --- Textos del Encabezado ---
   const titles = {
     main: "Plataforma de Consulta",
-    generales: "Elecciones Generales",
-    regionales: "Elecciones Regionales",
-    municipales: "Elecciones Municipales"
+    presidencial: "Elecciones Presidenciales",
+    regionales: "Elecciones Regionales"
   };
   const subtitles = {
     main: "Selecciona una categoría para ver los seleccionados.",
-    generales: "Selecciona tu voto presidencial y congresal.",
-    regionales: "Selecciona tu voto de gobernador y consejeros.",
-    municipales: "Selecciona tu voto de alcalde y regidores.", 
+    presidencial: "Selecciona tu voto presidencial.",
+    regionales: "Selecciona tu voto para Alcalde y/o Presidente Regional.", 
   };
 
 
   // Función para renderizar el contenido de las vistas
   const renderViewContent = useMemo(() => {
     switch (currentView) {
-      case 'generales':
+      case 'presidencial':
         return (
           <motion.div 
-            key="generales-view"
+            key="presidencial-view"
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12"
+            className="grid grid-cols-1 gap-8 lg:gap-12 max-w-4xl mx-auto"
           >
             
-            {/* --- Columna Izquierda: Congresistas (AZUL PRIMARIO) --- */}
+            {/* --- Columna: Candidatos Presidenciales (AZUL PRIMARIO) --- */}
             <motion.div 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}
               className="space-y-6"
             >
               <h2 className="text-3xl lg:text-4xl font-bold text-white text-center border-b-2 border-primary/30 pb-4">
-                Voto Congresal
-              </h2>
-              {/* LISTA CON ANIMACIÓN ESCALONADA */}
-              <motion.div 
-                initial="hidden"
-                animate="visible"
-                variants={listVariants}
-                className="space-y-4"
-              >
-                {congressionalCandidates.map((partido) => (
-                  <motion.div key={partido.id} variants={itemVariants}>
-                    <CandidateCard
-                      candidate={partido}
-                      type="congress"
-                      isSelected={selectedCongress === partido.id}
-                      onSelect={() => setSelectedCongress(partido.id)}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
-            </motion.div>
-            
-            {/* --- Columna Derecha: Presidentes (AZUL PRIMARIO) --- */}
-            <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0, transition: { delay: 0.4 } }}
-              className="space-y-6"
-            >
-              <h2 className="text-3xl lg:text-4xl font-bold text-white text-center border-b-2 border-primary/30 pb-4">
-                Voto Presidencial
+                Candidatos Presidenciales
               </h2>
               {/* LISTA CON ANIMACIÓN ESCALONADA */}
               <motion.div 
@@ -491,14 +517,14 @@ export default function ElectionSelection({ onGoBack }) {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0, transition: { delay: 0.6 } }}
-              className="lg:col-span-2 flex justify-center mt-8"
+              className="flex justify-center mt-8"
             >
               <Button 
                 className="w-full max-w-md h-16 text-2xl font-bold bg-primary/90 hover:bg-primary shadow-lg shadow-primary/20 disabled:bg-gray-500"
-                onClick={handleSubmitGeneralVote}
-                disabled={!selectedPresident || !selectedCongress}
+                onClick={handleSubmitPresidentialVote}
+                disabled={!selectedPresident}
               >
-                Emitir Voto General
+                Emitir Voto Presidencial
               </Button>
             </motion.div>
 
@@ -516,15 +542,14 @@ export default function ElectionSelection({ onGoBack }) {
             className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12"
           >
             
-            {/* --- Columna Izquierda: Consejeros Regionales (DORADO/AMARILLO) --- */}
+            {/* --- Columna Izquierda: Alcalde (DORADO/AMARILLO) --- */}
             <motion.div 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}
               className="space-y-6"
             >
-              {/* ESTILO ÚNICO PARA DIFERENCIACIÓN */}
-              <h2 className="text-3xl lg:text-4xl font-bold text-white text-center border-b-4 border-yellow-500/50 pb-4">
-                Voto Consejeros Regionales
+              <h2 className="text-3xl lg:text-4xl font-bold text-white text-center border-b-4 border-slate-500/50 pb-4">
+                Alcalde
               </h2>
               {/* LISTA CON ANIMACIÓN ESCALONADA */}
               <motion.div 
@@ -533,28 +558,27 @@ export default function ElectionSelection({ onGoBack }) {
                 variants={listVariants}
                 className="space-y-4"
               >
-                {regionalCandidates.councilors.map((list) => (
-                  <motion.div key={list.id} variants={itemVariants}>
+                {regionalCandidates.mayors.map((candidato) => (
+                  <motion.div key={candidato.id} variants={itemVariants}>
                     <CandidateCard
-                      candidate={list}
-                      type="councilor"
-                      isSelected={selectedCouncilor === list.id}
-                      onSelect={() => setSelectedCouncilor(list.id)}
+                      candidate={candidato}
+                      type="mayor"
+                      isSelected={selectedMayor === candidato.id}
+                      onSelect={() => setSelectedMayor(candidato.id)}
                     />
                   </motion.div>
                 ))}
               </motion.div>
             </motion.div>
             
-            {/* --- Columna Derecha: Gobernador Regional (DORADO/AMARILLO) --- */}
+            {/* --- Columna Derecha: Presidente Regional (DORADO/AMARILLO) --- */}
             <motion.div 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0, transition: { delay: 0.4 } }}
               className="space-y-6"
             >
-              {/* ESTILO ÚNICO PARA DIFERENCIACIÓN */}
-              <h2 className="text-3xl lg:text-4xl font-bold text-white text-center border-b-4 border-yellow-500/50 pb-4">
-                Voto Gobernador Regional
+              <h2 className="text-3xl lg:text-4xl font-bold text-white text-center border-b-4 border-slate-500/50 pb-4">
+                Presidente Regional
               </h2>
               {/* LISTA CON ANIMACIÓN ESCALONADA */}
               <motion.div 
@@ -563,13 +587,13 @@ export default function ElectionSelection({ onGoBack }) {
                 variants={listVariants}
                 className="space-y-4"
               >
-                {regionalCandidates.governors.map((candidato) => (
+                {regionalCandidates.regionalPresidents.map((candidato) => (
                   <motion.div key={candidato.id} variants={itemVariants}>
                     <CandidateCard
                       candidate={candidato}
                       type="governor"
-                      isSelected={selectedGovernor === candidato.id}
-                      onSelect={() => setSelectedGovernor(candidato.id)}
+                      isSelected={selectedRegionalPresident === candidato.id}
+                      onSelect={() => setSelectedRegionalPresident(candidato.id)}
                     />
                   </motion.div>
                 ))}
@@ -583,100 +607,26 @@ export default function ElectionSelection({ onGoBack }) {
               className="lg:col-span-2 flex justify-center mt-8"
             >
               <Button 
-                className="w-full max-w-md h-16 text-2xl font-bold bg-yellow-600 hover:bg-yellow-700 shadow-lg shadow-yellow-500/30 disabled:bg-gray-500"
-                onClick={handleSubmitRegionalVote}
-                disabled={!selectedGovernor || !selectedCouncilor}
+                className="w-full max-w-md h-16 text-2xl font-bold bg-slate-700 hover:bg-slate-600 shadow-lg shadow-slate-500/30 disabled:bg-gray-500"
+                onClick={() => {
+                  // Permitir votar por cualquiera de los dos o ambos
+                  if (selectedMayor && selectedRegionalPresident) {
+                    // Si ambos están seleccionados, mostrar opción para elegir cuál confirmar
+                    // Por ahora, confirmamos ambos en un solo voto
+                    const mayor = regionalCandidates.mayors.find(m => m.id === selectedMayor);
+                    const regionalPres = regionalCandidates.regionalPresidents.find(rp => rp.id === selectedRegionalPresident);
+                    setFinalVote({ primary: mayor, secondary: regionalPres });
+                    setVoteType('regionales');
+                    setShowConfirmationModal(true);
+                  } else if (selectedMayor) {
+                    handleSubmitMayorVote();
+                  } else if (selectedRegionalPresident) {
+                    handleSubmitRegionalPresidentVote();
+                  }
+                }}
+                disabled={!selectedMayor && !selectedRegionalPresident}
               >
-                Emitir Voto Regional
-              </Button>
-            </motion.div>
-
-          </motion.div>
-        );
-
-      case 'municipales':
-        return (
-          <motion.div 
-            key="municipales-vote-view"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12"
-          >
-            
-            {/* --- Columna Izquierda: Regidores (VERDE ESMERALDA) --- */}
-            <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}
-              className="space-y-6"
-            >
-              {/* ESTILO ÚNICO PARA DIFERENCIACIÓN */}
-              <h2 className="text-3xl lg:text-4xl font-bold text-white text-center border-b-4 border-emerald-500/70 pb-4">
-                Voto Regidores
-              </h2>
-              {/* LISTA CON ANIMACIÓN ESCALONADA */}
-              <motion.div 
-                initial="hidden"
-                animate="visible"
-                variants={listVariants}
-                className="space-y-4"
-              >
-                {municipalCandidates.council.map((list) => (
-                  <motion.div key={list.id} variants={itemVariants}>
-                    <CandidateCard
-                      candidate={list}
-                      type="council"
-                      isSelected={selectedCouncil === list.id}
-                      onSelect={() => setSelectedCouncil(list.id)}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
-            </motion.div>
-            
-            {/* --- Columna Derecha: Alcalde (VERDE ESMERALDA) --- */}
-            <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0, transition: { delay: 0.4 } }}
-              className="space-y-6"
-            >
-              {/* ESTILO ÚNICO PARA DIFERENCIACIÓN */}
-              <h2 className="text-3xl lg:text-4xl font-bold text-white text-center border-b-4 border-emerald-500/70 pb-4">
-                Voto Alcalde
-              </h2>
-              {/* LISTA CON ANIMACIÓN ESCALONADA */}
-              <motion.div 
-                initial="hidden"
-                animate="visible"
-                variants={listVariants}
-                className="space-y-4"
-              >
-                {municipalCandidates.mayors.map((candidato) => (
-                  <motion.div key={candidato.id} variants={itemVariants}>
-                    <CandidateCard
-                      candidate={candidato}
-                      type="mayor"
-                      isSelected={selectedMayor === candidato.id}
-                      onSelect={() => setSelectedMayor(candidato.id)}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
-            </motion.div>
-
-            {/* --- Botón de Votar (VERDE) --- */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0, transition: { delay: 0.6 } }}
-              className="lg:col-span-2 flex justify-center mt-8"
-            >
-              <Button 
-                className="w-full max-w-md h-16 text-2xl font-bold bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/30 disabled:bg-gray-500"
-                onClick={handleSubmitMunicipalVote}
-                disabled={!selectedMayor || !selectedCouncil}
-              >
-                Emitir Voto Municipal
+                Emitir Voto
               </Button>
             </motion.div>
 
@@ -692,31 +642,34 @@ export default function ElectionSelection({ onGoBack }) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 50 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="grid grid-cols-1 lg:grid-cols-4 gap-8"
+            className="grid grid-cols-1 lg:grid-cols-3 gap-8"
           >
-            {/* Tarjeta 1: Generales */}
+            {/* Tarjeta 1: Presidencial */}
             <TiltCard
               icon={Gavel}
-              title="Generales"
-              description="Consulta el Poder Ejecutivo y Legislativo."
-              onClick={() => setCurrentView('generales')}
+              title="Presidencial"
+              description="Consulta los candidatos presidenciales."
+              onClick={() => {
+                if (!votedSections.presidencial) {
+                  setCurrentView('presidencial');
+                }
+              }}
+              isLocked={votedSections.presidencial}
             />
             {/* Tarjeta 2: Regionales */}
             <TiltCard
-              icon={Landmark}
-              title="Regionales"
-              description="Consulta los gobiernos de tu región."
-              onClick={() => setCurrentView('regionales')}
-            />
-            {/* Tarjeta 3: Municipales */}
-            <TiltCard
               icon={Building}
-              title="Municipales"
+              title="Regionales"
               description="Consulta las autoridades de tu localidad."
-              onClick={() => setCurrentView('municipales')}
+              onClick={() => {
+                if (!votedSections.regionales) {
+                  setCurrentView('regionales');
+                }
+              }}
+              isLocked={votedSections.regionales}
             />
             
-            {/* Tarjeta 4: Panel de Enlaces Oficiales */}
+            {/* Tarjeta 3: Panel de Enlaces Oficiales */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 } }}
@@ -734,8 +687,73 @@ export default function ElectionSelection({ onGoBack }) {
           </motion.div>
         );
     }
-  }, [currentView, selectedPresident, selectedCongress, selectedMayor, selectedCouncil, selectedGovernor, selectedCouncilor]);
+  }, [currentView, selectedPresident, selectedRegionalPresident, selectedMayor, votedSections]);
 
+
+  // Función para verificar si puede acceder a una vista
+  const canAccessView = (viewName) => {
+    if (viewName === 'presidencial') {
+      return !votedSections.presidencial;
+    } else if (viewName === 'regionales') {
+      return !votedSections.regionales;
+    }
+    return true;
+  };
+
+  // Si intenta acceder a un apartado ya votado, mostrar pantalla de bloqueo
+  if ((currentView === 'presidencial' && votedSections.presidencial) ||
+      (currentView === 'regionales' && votedSections.regionales)) {
+    return (
+      <main className="flex-grow flex flex-col items-center justify-center min-h-screen py-20 px-4 
+                       bg-animated-gradient overflow-hidden text-white">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-2xl mx-auto text-center space-y-8"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            className="mx-auto w-32 h-32 bg-red-500/20 rounded-full flex items-center justify-center"
+          >
+            <Lock className="h-16 w-16 text-red-400" />
+          </motion.div>
+          
+          <div className="space-y-4">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-white">
+              Ya has emitido tu voto
+            </h1>
+            <p className="text-xl text-gray-300">
+              Ya has votado en el apartado de <strong>{currentView === 'presidencial' ? 'Presidencial' : 'Regionales'}</strong>.
+            </p>
+            <p className="text-gray-400">
+              Por seguridad electoral, no se permite votar nuevamente en este apartado.
+            </p>
+          </div>
+
+          <div className="bg-card/50 border border-white/10 rounded-lg p-6 space-y-4">
+            <div className="flex items-center justify-center space-x-2 text-green-400">
+              <CheckCircle className="h-6 w-6" />
+              <span className="font-semibold">Voto confirmado y registrado</span>
+            </div>
+            <p className="text-sm text-gray-400">
+              Gracias por participar en el proceso electoral. Tu voto es importante para la democracia.
+            </p>
+          </div>
+
+          <Button
+            onClick={() => setCurrentView('main')}
+            className="h-12 px-8 text-lg font-semibold bg-primary hover:bg-primary/90"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Volver al menú principal
+          </Button>
+        </motion.div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-grow flex flex-col items-center min-h-screen py-20 px-4 

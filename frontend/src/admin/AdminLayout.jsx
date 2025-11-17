@@ -90,9 +90,6 @@ function AdminHeader({ title }) {
         <h1 className="text-4xl font-extrabold text-white">
           {title}
         </h1>
-        <p className="text-lg text-muted-foreground">
-          Panel de gestión de votaciones (Modo Simulación)
-        </p>
       </div>
       <div className="flex items-center space-x-3">
         <Button variant="outline" size="icon" className="bg-card border-border text-muted-foreground hover:text-white hover:border-primary">

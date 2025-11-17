@@ -5,9 +5,6 @@ import { Button } from '@/ui/button';
 import { Link } from 'react-scroll';
 
 const Header = ({ onAdminOpen }) => {
-  // Verificar si el usuario está autenticado como admin
-  const isAdmin = localStorage.getItem('isAdmin') === 'true';
-
   const navItems = [
     { to: 'inicio', label: 'Inicio', icon: Home },
     { to: 'como-votar', label: 'Cómo votar', icon: HelpCircle },
@@ -25,11 +22,13 @@ const Header = ({ onAdminOpen }) => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          <div className="flex items-center space-x-3">
-            <img src="https://horizons-cdn.hostinger.com/faebab8c-5e00-4302-9124-6ab376c2b556/8b97dea24d1a605ae14c9158800a5f84.png" alt="Logo Votación" className="h-12 w-12" />
-            <span className="text-xl font-bold tracking-tight text-white">
-              Votación Ciudadana
-            </span>
+          <div className="flex items-center">
+            <div className="flex flex-col">
+              <span className="text-lg md:text-xl font-bold tracking-tight text-white">
+                Votación Ciudadana
+              </span>
+              <span className="text-xs text-gray-400 hidden md:block">República del Perú</span>
+            </div>
           </div>
           <nav className="hidden md:flex items-center space-x-2">
             {navItems.map((item) => (
@@ -49,17 +48,15 @@ const Header = ({ onAdminOpen }) => {
               </Link>
             ))}
           </nav>
-       <div className="hidden md:flex items-center space-x-2">
-         {isAdmin && (
-           <Button 
-             variant="ghost" 
-             className="text-gray-300 hover:bg-white/10 hover:text-white flex items-center" 
-             onClick={() => onAdminOpen && onAdminOpen()}
-           >
-             <BarChart2 className="h-5 w-5" />
-             <span className="ml-2">Admin</span>
-           </Button>
-         )}
+       <div className="flex items-center space-x-2">
+         <Button 
+           variant="ghost" 
+           className="text-gray-300 hover:bg-white/10 hover:text-white flex items-center" 
+           onClick={() => onAdminOpen && onAdminOpen()}
+         >
+           <BarChart2 className="h-5 w-5" />
+           <span className="hidden md:inline ml-2">Administrador</span>
+         </Button>
        </div>
         </div>
       </div>

@@ -1,604 +1,261 @@
-// frontend/src/admin/pages/Dashboard.jsx
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/ui/tabs';
-import ChartReal from '../components/ChartReal';
 import PeruMap from '../components/PeruMap';
 import ActivityFeed from '../components/ActivityFeed';
-import StatCard from '../components/StatCard'; // Importamos la nueva StatCard
-import { getAggregates, getPresidentialVotes, getRegionalVotes } from '../utils/dataUtils';
-import { motion } from 'framer-motion';
-import { Users, Vote, Percent, Archive, MapPin } from 'lucide-react';
-import { Button } from '@/ui/button';
-import DataTable from '../components/DataTable';
+import StatCard from '../components/StatCard';
+import { getAggregates, getPresidentialVotes } from '../utils/dataUtils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Users, Vote, TrendingUp, Archive, MapPin, Activity, PieChart, BarChart3 } from 'lucide-react';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler
+} from 'chart.js';
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
-};
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } },
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
+
+// --- COMPONENTE: BARRA LINEAL ---
+const LinearBar = ({ label, value, maxValue, color = "bg-blue-500" }) => {
+  const percentage = Math.min(100, Math.max(0, (value / maxValue) * 100));
+  return (
+    <div className="py-2.5 border-b border-slate-800/50 last:border-0 group hover:bg-white/[0.02] px-2 rounded transition-colors">
+      <div className="flex justify-between items-center mb-1.5">
+        <span className="text-xs font-medium text-slate-300 truncate max-w-[65%]">{label}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-white tabular-nums">{value.toLocaleString()}</span>
+          <span className="text-[10px] font-mono text-slate-500 bg-slate-900 border border-slate-800 px-1.5 rounded-sm">
+            {percentage.toFixed(1)}%
+          </span>
+        </div>
+      </div>
+      <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+        <motion.div 
+          className={`h-full rounded-full ${color} shadow-[0_0_8px_rgba(var(--color-ref),0.4)]`}
+          initial={{ width: 0 }}
+          animate={{ width: `${percentage}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        />
+      </div>
+    </div>
+  );
 };
 
-// Función para simular datos en vivo
-const useLiveData = (initialData, totalMesas) => {
+// --- GRÁFICO DE TENDENCIA ---
+const TrendChart = () => {
+  const data = {
+    labels: ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
+    datasets: [{
+      label: 'Tendencia',
+      data: [1500, 3200, 5800, 8500, 12200, 15600], 
+      borderColor: '#fbbf24',
+      backgroundColor: 'rgba(251, 191, 36, 0.0)',
+      borderWidth: 3,
+      tension: 0.4,
+      pointRadius: 5,
+      pointBackgroundColor: '#fbbf24',
+      pointBorderColor: '#0f172a',
+      pointBorderWidth: 2,
+      pointHoverRadius: 7,
+    }],
+  };
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, border: { display: false }, grid: { color: 'rgba(255, 255, 255, 0.08)', borderDash: [4, 4] }, ticks: { color: '#64748b', font: { size: 10 } } },
+      x: { border: { display: false }, grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } }
+    }
+  };
+  return (
+    <div className="w-full h-[220px] flex-shrink-0 bg-[#0b1121] p-4 rounded-xl border border-slate-800 shadow-inner flex flex-col mb-4">
+      <div className="flex justify-between items-center mb-2">
+         <h4 className="text-xs text-slate-400 uppercase font-bold tracking-wider">Tendencia Nacional</h4>
+         <span className="text-[9px] text-green-400 bg-green-400/10 px-1.5 rounded border border-green-400/20 tracking-wide font-bold">ALTA</span>
+      </div>
+      <div className="flex-1 w-full min-h-0">
+        <Line data={data} options={options} />
+      </div>
+    </div>
+  );
+};
+
+// --- DATA HELPERS ---
+const getProvincesForRegion = (regionName) => {
+  if (!regionName) return null;
+  const baseCount = Math.floor(Math.random() * 600) + 400;
+  return {
+    [`Provincia Capital`]: baseCount,
+    [`Zona Norte`]: Math.floor(baseCount * 0.92),
+    [`Zona Sur`]: Math.floor(baseCount * 0.85),
+    [`Zona Este`]: Math.floor(baseCount * 0.77),
+    [`Zona Oeste`]: Math.floor(baseCount * 0.65),
+    [`Distrito Alto`]: Math.floor(baseCount * 0.55)
+  };
+};
+
+const useLiveData = (initialData) => {
   const [data, setData] = useState(initialData);
-  const [mesas, setMesas] = useState(9); // Empezamos en 9 como tu imagen
-
-  // Actualizar datos cuando cambia initialData
-  useEffect(() => {
-    setData(initialData);
-  }, [initialData]);
-
+  const [mesas, setMesas] = useState(1200);
+  useEffect(() => { setData(initialData); }, [initialData]);
+  
   useEffect(() => {
     const interval = setInterval(() => {
-      // Simula un nuevo voto
-      const regionKeys = Object.keys(data.byRegion || data.byProvince || {});
-      const candKeys = Object.keys(data.byCandidate || {});
-      
-      if (regionKeys.length > 0) {
-        const randomRegion = regionKeys[Math.floor(Math.random() * regionKeys.length)];
-        
-        // Simula el conteo de mesas
-        setMesas(prev => (prev < totalMesas ? prev + 1 : prev));
-
-        setData(prevData => {
-          const newData = { ...prevData };
-          
-          // Actualizar región o provincia
-          if (prevData.byRegion) {
-            newData.byRegion = {
-              ...prevData.byRegion,
-              [randomRegion]: (prevData.byRegion[randomRegion] || 0) + 17,
-            };
-          } else if (prevData.byProvince) {
-            newData.byProvince = {
-              ...prevData.byProvince,
-              [randomRegion]: (prevData.byProvince[randomRegion] || 0) + 17,
-            };
-          }
-          
-          // Actualizar candidatos si existen
-          if (prevData.byCandidate && candKeys.length > 0) {
-            const randomCand = candKeys[Math.floor(Math.random() * candKeys.length)];
-            newData.byCandidate = {
-              ...prevData.byCandidate,
-              [randomCand]: (prevData.byCandidate[randomCand] || 0) + 17,
-            };
-          }
-          
-          return newData;
-        });
-      }
-    }, 2000); // Actualiza cada 2 segundos
-
+      setMesas(prev => prev + 1);
+      setData(prev => {
+        const newData = { ...prev };
+        if (newData.byCandidate) {
+           const keys = Object.keys(newData.byCandidate);
+           if(keys.length) newData.byCandidate[keys[0]] += Math.floor(Math.random() * 5);
+        }
+        return newData;
+      });
+    }, 2000);
     return () => clearInterval(interval);
-  }, [data, totalMesas]);
-
+  }, []);
   return { liveData: data, mesasEscrutadas: mesas };
-};
-
-// Datos de provincias por región de Perú
-const REGIONS_PROVINCES = {
-  'Lima': {
-    provincias: {
-      'Lima': 1850,
-      'Callao': 1200,
-      'Huaura': 980,
-      'Barranca': 850,
-      'Cañete': 720,
-      'Huaral': 650
-    }
-  },
-  'Arequipa': {
-    provincias: {
-      'Arequipa': 1450,
-      'Caylloma': 920,
-      'Camana': 780,
-      'Islay': 650,
-      'Castilla': 580
-    }
-  },
-  'Cusco': {
-    provincias: {
-      'Cusco': 1200,
-      'Quispicanchi': 850,
-      'Canchis': 720,
-      'Urubamba': 650,
-      'Calca': 580
-    }
-  },
-  'La Libertad': {
-    provincias: {
-      'Trujillo': 1100,
-      'Chepen': 850,
-      'Pacasmayo': 720,
-      'Otuzco': 650,
-      'Santiago de Chuco': 580
-    }
-  },
-  'Piura': {
-    provincias: {
-      'Piura': 980,
-      'Sullana': 850,
-      'Talara': 720,
-      'Paita': 650,
-      'Sechura': 580
-    }
-  },
-  'Lambayeque': {
-    provincias: {
-      'Chiclayo': 920,
-      'Lambayeque': 780,
-      'Ferreñafe': 650
-    }
-  },
-  'Junín': {
-    provincias: {
-      'Huancayo': 850,
-      'Jauja': 720,
-      'Tarma': 650,
-      'Concepción': 580
-    }
-  },
-  'Cajamarca': {
-    provincias: {
-      'Cajamarca': 780,
-      'Jaén': 650,
-      'Cutervo': 580,
-      'Chota': 520
-    }
-  },
-  'Ancash': {
-    provincias: {
-      'Huaraz': 720,
-      'Chimbote': 650,
-      'Carhuaz': 580,
-      'Yungay': 520
-    }
-  },
-  'Puno': {
-    provincias: {
-      'Puno': 680,
-      'Juliaca': 580,
-      'Azángaro': 520,
-      'San Román': 480
-    }
-  }
 };
 
 export default function Dashboard() {
   const staticData = getAggregates();
   const totalMesas = 1500;
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [hoveredDep, setHoveredDep] = useState(null);
   const [selectedRegion, setSelectedRegion] = useState(null);
-  const [regionProvincesData, setRegionProvincesData] = useState(null);
-  
-  // Actualizar datos cada 2 segundos para reflejar nuevos votos
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRefreshKey(prev => prev + 1);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
+  const [hoveredDep, setHoveredDep] = useState(null);
+  const [activeTab, setActiveTab] = useState("presidencial");
 
-  // Actualizar datos de provincias cuando se selecciona una región
-  useEffect(() => {
-    if (selectedRegion && REGIONS_PROVINCES[selectedRegion]) {
-      const initialData = { ...REGIONS_PROVINCES[selectedRegion].provincias };
-      setRegionProvincesData(initialData);
+  const handleRegionClick = (regionName) => {
+    if (!regionName || selectedRegion === regionName) {
+      setSelectedRegion(null);
+      setActiveTab("presidencial");
     } else {
-      setRegionProvincesData(null);
-    }
-  }, [selectedRegion]);
-
-  // Simular datos en vivo para provincias de la región seleccionada
-  const provincesInitialData = useMemo(() => {
-    if (selectedRegion && REGIONS_PROVINCES[selectedRegion]) {
-      return { byProvince: { ...REGIONS_PROVINCES[selectedRegion].provincias } };
-    }
-    return { byProvince: {} };
-  }, [selectedRegion]);
-
-  const { liveData: provincesLiveData } = useLiveData(
-    provincesInitialData,
-    totalMesas
-  );
-
-  // Obtener datos simulados mejorados (se recalcula cuando cambia refreshKey)
-  const presVotes = useMemo(() => getPresidentialVotes(), [refreshKey]);
-  const regionalVotes = useMemo(() => getRegionalVotes(), [refreshKey]);
-  
-  // Preparar datos para visualización
-  const presData = useMemo(() => ({
-    byCandidate: presVotes.byCandidate,
-    byRegion: presVotes.byRegion
-  }), [presVotes]);
-  
-  const regionalData = useMemo(() => ({
-    byCandidate: regionalVotes.byCandidate,
-    byProvince: regionalVotes.byProvince
-  }), [regionalVotes]);
-  
-  // Simular datos en vivo para animación
-  const { liveData: presLiveData, mesasEscrutadas } = useLiveData(
-    { byCandidate: presData.byCandidate, byRegion: presData.byRegion }, 
-    totalMesas
-  );
-  
-  const { liveData: regionalLiveData } = useLiveData(
-    { byCandidate: regionalData.byCandidate, byProvince: regionalData.byProvince }, 
-    totalMesas
-  );
-  
-  // Usar datos simulados con animación en vivo
-  const finalPresData = useMemo(() => presLiveData, [presLiveData]);
-  const finalRegionalData = useMemo(() => ({
-    byCandidate: regionalLiveData.byCandidate,
-    byProvince: regionalLiveData.byProvince
-  }), [regionalLiveData]);
-  
-  const mapData = staticData.mapData;
-
-  const totalVotantes = 24200; // Valor fijo como en la imagen
-  const totalVotosPres = (Object.values(finalPresData.byCandidate).reduce((a,b)=>a+b,0) || 0);
-  const totalVotosReg = (Object.values(finalRegionalData.byCandidate).reduce((a,b)=>a+b,0) || 0);
-  const totalVotos = totalVotosPres + totalVotosReg;
-  const participacion = ((totalVotos / totalVotantes) * 100).toFixed(2);
-  const mesasPorcentaje = ((mesasEscrutadas / totalMesas) * 100).toFixed(1);
-
-  // Opciones profesionales para Gráficos de Barras
-  const barChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
-      },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        padding: 12,
-        titleFont: { size: 14, weight: 'bold' },
-        bodyFont: { size: 13 },
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        borderWidth: 1,
-        displayColors: false,
-        callbacks: {
-          label: function(context) {
-            return `Votos: ${context.parsed.y.toLocaleString()}`;
-          }
-        }
-      }
-    },
-    scales: { 
-      y: { 
-        beginAtZero: true,
-        max: 3500,
-        ticks: { 
-          callback: (v) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : v,
-          color: 'rgba(255, 255, 255, 0.7)',
-          font: { size: 11 }
-        },
-        grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
-          drawBorder: false
-        }
-      },
-      x: {
-        ticks: {
-          color: 'rgba(255, 255, 255, 0.7)',
-          font: { size: 11 },
-          maxRotation: 45,
-          minRotation: 0
-        },
-        grid: {
-          display: false
-        }
-      }
+      setSelectedRegion(regionName);
+      setActiveTab("regional");
     }
   };
-  
-  // Opciones profesionales para Gráfico de Línea
-  const lineChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
-      },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        padding: 12,
-        titleFont: { size: 14, weight: 'bold' },
-        bodyFont: { size: 13 },
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        borderWidth: 1,
-        displayColors: false,
-        callbacks: {
-          label: function(context) {
-            return `Votos: ${context.parsed.y.toLocaleString()}`;
-          }
-        }
-      }
-    },
-    scales: { 
-      y: { 
-        beginAtZero: true,
-        max: 2000,
-        ticks: { 
-          callback: (v) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : v,
-          color: 'rgba(255, 255, 255, 0.7)',
-          font: { size: 11 }
-        },
-        grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
-          drawBorder: false
-        }
-      },
-      x: {
-        ticks: {
-          color: 'rgba(255, 255, 255, 0.7)',
-          font: { size: 11 },
-          maxRotation: 45,
-          minRotation: 0
-        },
-        grid: {
-          color: 'rgba(255, 255, 255, 0.05)'
-        }
-      }
-    },
-    elements: {
-      point: {
-        radius: 5,
-        hoverRadius: 7,
-        borderWidth: 2
-      },
-      line: {
-        tension: 0.4,
-        borderWidth: 3
-      }
-    }
-  };
+
+  const presVotes = useMemo(() => getPresidentialVotes(), []);
+  const provincesInitialData = useMemo(() => ({ byProvince: getProvincesForRegion(selectedRegion) }), [selectedRegion]);
+  const { liveData: provincesLiveData } = useLiveData(provincesInitialData);
+  const { liveData: finalPresData, mesasEscrutadas } = useLiveData({ byCandidate: presVotes.byCandidate });
+
+  const totalVotos = Object.values(finalPresData.byCandidate).reduce((a,b)=>a+b,0);
+  const sortedCandidates = Object.entries(finalPresData.byCandidate).sort(([,a], [,b]) => b - a);
+  const totalPresVotes = Math.max(totalVotos, 1);
 
   return (
-    <motion.div 
-      className="space-y-8"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      {/* 1. Tarjetas de Stats (Recreando image_250ce4.png) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard 
-          title="Total Votantes (Padrón)" 
-          value={totalVotantes.toLocaleString()} 
-          description="Estimado oficial"
-          icon={Users}
-          colorClass="text-primary"
-          glowEffect={true}
-        />
-        <StatCard 
-          title="Votos Emitidos" 
-          value={totalVotos.toLocaleString()} 
-          description="Conteo en tiempo real"
-          icon={Vote}
-          colorClass="text-green-500"
-        />
-        <StatCard 
-          title="% Participación" 
-          value={`${participacion}%`} 
-          description="Proyección actualizada"
-          icon={Percent}
-          colorClass="text-blue-400"
-        />
-        <StatCard 
-          title="Mesas Escrutadas" 
-          value={`${mesasEscrutadas} / ${totalMesas}`}
-          description={`${mesasPorcentaje}% completado`}
-          icon={Archive}
-          colorClass="text-white"
-        />
+    // Eliminamos la altura fija y usamos w-full. El scroll lo maneja AdminLayout
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
+      
+      {/* 1. KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full">
+        <StatCard title="Electores" value="24,200" description="Padrón" icon={Users} colorClass="text-indigo-400" />
+        <StatCard title="Votos" value={totalVotos.toLocaleString()} description="En vivo" icon={Vote} colorClass="text-emerald-400" glowEffect />
+        <StatCard title="Participación" value="82.4%" description="Nacional" icon={TrendingUp} colorClass="text-blue-400" />
+        <StatCard title="Actas" value={`${((mesasEscrutadas/totalMesas)*100).toFixed(1)}%`} description="Procesadas" icon={Archive} colorClass="text-amber-400" />
       </div>
 
-      {/* 2. Vistas por Tipo de Votación (Pestañas) */}
-      <motion.div variants={itemVariants}>
-        <Tabs defaultValue="presidencial" className="w-full">
-          <TabsList>
-            <TabsTrigger 
-              value="presidencial"
-              className="data-[state=active]:bg-slate-700 data-[state=active]:text-white data-[state=active]:hover:bg-slate-600"
-            >
-              Votación Presidencial
-            </TabsTrigger>
-            <TabsTrigger 
-              value="regional"
-              className="data-[state=active]:bg-indigo-700 data-[state=active]:text-white data-[state=active]:hover:bg-indigo-600"
-            >
-              Votación Regional
-            </TabsTrigger>
-          </TabsList>
+      {/* 2. Main Content Split */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+        
+        {/* IZQUIERDA: MAPA (Altura fija en móvil para no ocupar todo, Flexible en PC) */}
+        <div className="lg:col-span-8 h-[500px] lg:h-[calc(100vh-16rem)] bg-[#0f172a] border border-slate-800 rounded-xl overflow-hidden relative shadow-xl flex flex-col">
+           <PeruMap 
+              data={staticData.mapData} 
+              onDepartmentHover={setHoveredDep} 
+              onDepartmentClick={handleRegionClick} 
+              selectedRegion={selectedRegion} 
+           />
+        </div>
+
+        {/* DERECHA: DATOS */}
+        <div className="lg:col-span-4 flex flex-col gap-6 lg:h-[calc(100vh-16rem)]">
           
-          <TabsContent value="presidencial">
-            <div className="grid md:grid-cols-2 gap-6 mt-6">
-              <Card className="bg-card/80 border-border backdrop-blur-sm shadow-xl">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-xl text-white font-semibold">Votos por Región</CardTitle>
-                  <p className="text-sm text-gray-400 mt-1">Distribución geográfica de votos presidenciales</p>
-                </CardHeader>
-                <CardContent className="h-[380px]">
-                  <ChartReal 
-                    labels={Object.keys(finalPresData.byRegion)} 
-                    datasets={[{ 
-                      label: 'Votos', 
-                      data: Object.values(finalPresData.byRegion), 
-                      backgroundColor: 'rgba(71, 85, 105, 0.8)', // Slate profesional
-                      borderColor: 'rgba(71, 85, 105, 1)',
-                      borderWidth: 2,
-                      borderRadius: 6,
-                      borderSkipped: false,
-                    }]} 
-                    options={barChartOptions} 
-                  />
-                </CardContent>
-              </Card>
-              <Card className="bg-card/80 border-border backdrop-blur-sm shadow-xl">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-xl text-white font-semibold">Votos por Candidato</CardTitle>
-                  <p className="text-sm text-gray-400 mt-1">Tendencia de votos presidenciales en tiempo real</p>
-                </CardHeader>
-                <CardContent className="h-[380px]">
-                  <ChartReal 
-                    type="line" 
-                    labels={Object.keys(finalPresData.byCandidate)} 
-                    datasets={[{ 
-                      label: 'Votos', 
-                      data: Object.values(finalPresData.byCandidate), 
-                      borderColor: 'rgba(71, 85, 105, 1)', // Slate
-                      fill: true,
-                      tension: 0.4,
-                      backgroundColor: 'rgba(71, 85, 105, 0.15)',
-                      pointBackgroundColor: 'rgba(71, 85, 105, 1)',
-                      pointBorderColor: '#fff',
-                      pointHoverBackgroundColor: '#fff',
-                      pointHoverBorderColor: 'rgba(71, 85, 105, 1)',
-                    }]} 
-                    options={lineChartOptions} 
-                  />
-                </CardContent>
-              </Card>
+          {/* Panel de Resultados (Flexible) */}
+          <div className="flex-1 bg-[#0f172a] border border-slate-800 rounded-xl shadow-lg flex flex-col overflow-hidden min-h-[500px] lg:min-h-0">
+            <div className="p-3 border-b border-slate-800 bg-slate-900/50 shrink-0">
+               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-slate-900 p-1 h-10 border border-slate-800/50">
+                    <TabsTrigger value="presidencial" className="text-xs font-bold data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">PRESIDENCIAL</TabsTrigger>
+                    <TabsTrigger value="regional" className="text-xs font-bold data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">REGIONAL</TabsTrigger>
+                  </TabsList>
+               </Tabs>
             </div>
-          </TabsContent>
 
-          <TabsContent value="regional">
-            <div className="space-y-6 mt-6">
-              {/* Tabla de Regiones */}
-              <Card className="bg-card/80 border-border backdrop-blur-sm shadow-xl">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-xl text-white font-semibold flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-primary" />
-                    Regiones del Perú
-                  </CardTitle>
-                  <p className="text-sm text-gray-400 mt-1">Seleccione una región para ver sus provincias</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    {Object.keys(REGIONS_PROVINCES).map((region) => (
-                      <Button
-                        key={region}
-                        onClick={() => setSelectedRegion(region)}
-                        variant={selectedRegion === region ? "default" : "outline"}
-                        className={`h-12 text-sm font-semibold transition-all duration-300 ${
-                          selectedRegion === region
-                            ? 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg'
-                            : 'bg-card/50 hover:bg-card/70 border-primary/30 text-white'
-                        }`}
-                      >
-                        {region}
-                      </Button>
-                    ))}
+            {/* Contenido Scrollable */}
+            <div className="flex-1 p-4 overflow-y-auto custom-scrollbar relative">
+               
+               {/* VISTA PRESIDENCIAL */}
+               <div className={activeTab === 'presidencial' ? 'flex flex-col h-full' : 'hidden'}>
+                  <TrendChart />
+                  
+                  {/* Lista de Conteo Rápido */}
+                  <div className="flex-1 flex flex-col min-h-0 bg-[#0b1121] rounded-xl border border-slate-800 p-3 shadow-inner">
+                     <div className="flex items-center justify-between mb-3 border-b border-slate-800 pb-2 shrink-0">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                           <Vote className="w-3 h-3 text-blue-400" /> Conteo Rápido
+                        </h4>
+                     </div>
+                     {/* Flex-1 para que ocupe todo el espacio restante y active scroll si es necesario */}
+                     <div className="flex-1 overflow-y-auto custom-scrollbar space-y-0.5 pr-1 min-h-[150px]">
+                        {sortedCandidates.map(([cand, val], idx) => (
+                           <LinearBar 
+                              key={cand} label={cand} value={val} maxValue={totalPresVotes} 
+                              color={idx === 0 ? "bg-emerald-500" : "bg-slate-600"}
+                           />
+                        ))}
+                     </div>
                   </div>
-                  {selectedRegion && (
-                    <div className="mt-4 p-3 bg-primary/10 border border-primary/30 rounded-lg">
-                      <p className="text-sm text-gray-300">
-                        Región seleccionada: <span className="text-primary font-bold">{selectedRegion}</span>
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+               </div>
 
-              {/* Gráfico de Provincias - Línea */}
-              <Card className="bg-card/80 border-border backdrop-blur-sm shadow-xl">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-xl text-white font-semibold">
-                    {selectedRegion 
-                      ? `Votos por Provincia - ${selectedRegion}` 
-                      : 'Votos por Provincia'}
-                  </CardTitle>
-                  <p className="text-sm text-gray-400 mt-1">
-                    {selectedRegion 
-                      ? `Tendencia de votos en tiempo real por provincia en ${selectedRegion}`
-                      : 'Seleccione una región para ver el gráfico de tendencia'}
-                  </p>
-                </CardHeader>
-                <CardContent className="h-[450px]">
-                  {selectedRegion && provincesLiveData?.byProvince && Object.keys(provincesLiveData.byProvince).length > 0 ? (
-                    <ChartReal 
-                      type="line"
-                      labels={Object.keys(provincesLiveData.byProvince)} 
-                      datasets={[{ 
-                        label: 'Votos', 
-                        data: Object.values(provincesLiveData.byProvince), 
-                        borderColor: 'rgba(67, 56, 202, 1)', // Indigo profesional
-                        fill: true,
-                        tension: 0.4,
-                        backgroundColor: 'rgba(67, 56, 202, 0.15)',
-                        pointBackgroundColor: 'rgba(67, 56, 202, 1)',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgba(67, 56, 202, 1)',
-                        pointRadius: 6,
-                        pointHoverRadius: 8,
-                        borderWidth: 3,
-                      }]} 
-                      options={{
-                        ...lineChartOptions,
-                        scales: {
-                          ...lineChartOptions.scales,
-                          y: {
-                            ...lineChartOptions.scales.y,
-                            max: Math.max(...Object.values(provincesLiveData.byProvince)) * 1.2 || 2000
-                          }
-                        }
-                      }} 
-                    />
+               {/* VISTA REGIONAL */}
+               <div className={activeTab === 'regional' ? 'flex flex-col h-full' : 'hidden'}>
+                  {selectedRegion ? (
+                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full flex flex-col">
+                        <div className="flex items-center gap-3 mb-4 p-4 bg-[#0b1121] rounded-lg border border-amber-500/20 shrink-0 shadow-sm">
+                           <div className="p-2.5 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                              <MapPin className="w-6 h-6 text-amber-500" />
+                           </div>
+                           <div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Región</span>
+                              <span className="text-xl font-black text-white uppercase tracking-tight">{selectedRegion}</span>
+                           </div>
+                        </div>
+                        
+                        <div className="bg-[#0b1121] rounded-xl border border-slate-800 p-4 flex-1 overflow-hidden flex flex-col shadow-inner">
+                           <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-1 min-h-[200px]">
+                              {provincesLiveData?.byProvince && Object.entries(provincesLiveData.byProvince).map(([prov, val]) => (
+                                 <LinearBar 
+                                    key={prov} label={prov} value={val} 
+                                    maxValue={Math.max(...Object.values(provincesLiveData.byProvince))} 
+                                    color="bg-amber-500" 
+                                 />
+                              ))}
+                           </div>
+                        </div>
+                     </motion.div>
                   ) : (
-                    <div className="flex items-center justify-center h-full text-gray-400">
-                      <div className="text-center">
-                        <MapPin className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                        <p className="text-xl font-semibold mb-2">Seleccione una región</p>
-                        <p className="text-sm">Elija una región del Perú para ver el gráfico de tendencia de votos por provincia</p>
-                      </div>
-                    </div>
+                     <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 opacity-60">
+                        <PieChart className="w-16 h-16 mb-4 opacity-20" />
+                        <p className="text-sm font-medium text-slate-300">Sin región seleccionada</p>
+                        <p className="text-xs mt-1 text-slate-500">Haga clic en el mapa para ver datos.</p>
+                     </div>
                   )}
-                </CardContent>
-              </Card>
+               </div>
             </div>
-          </TabsContent>
-        </Tabs>
-      </motion.div>
+          </div>
 
-      {/* 3. Mapa y Feed en Vivo */}
-      <div className="grid grid-cols-3 gap-6">
-        <motion.div variants={itemVariants} className="col-span-2">
-          <Card className="bg-card/80 border-border backdrop-blur-sm shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-xl text-white font-semibold">Mapa de Participación por Departamento</CardTitle>
-              <p className="text-sm text-gray-400 mt-1">Mapa completo del Perú con los 25 departamentos</p>
-              {hoveredDep && (
-                <div className="mt-3 p-3 bg-primary/10 border border-primary/30 rounded-lg">
-                  <p className="text-base text-white">
-                    <span className="font-semibold">{hoveredDep.name}:</span>{' '}
-                    <span className="text-primary font-bold text-lg">{hoveredDep.value || 'N/A'}%</span>
-                  </p>
-                </div>
-              )}
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="w-full h-[600px] rounded-lg overflow-hidden border border-border/50">
-                <PeruMap data={mapData} onDepartmentHover={setHoveredDep} />
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-        <motion.div variants={itemVariants}>
-          <ActivityFeed />
-        </motion.div>
+          {/* Feed de Actividad (Fijo) */}
+          <div className="h-[160px] flex-shrink-0 bg-[#0f172a] border border-slate-800 rounded-xl shadow-lg overflow-hidden flex flex-col">
+             <div className="px-4 py-2.5 border-b border-slate-800 bg-slate-900/50 flex items-center gap-2 shrink-0">
+                <Activity className="w-3 h-3 text-emerald-400" />
+                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Actividad Reciente</span>
+             </div>
+             <div className="flex-1 overflow-hidden relative">
+                <ActivityFeed />
+             </div>
+          </div>
+
+        </div>
       </div>
-
-    </motion.div>
+    </div>
   );
 }

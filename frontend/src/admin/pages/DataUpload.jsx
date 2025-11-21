@@ -1,68 +1,49 @@
-// frontend/src/admin/pages/DataUpload.jsx
+// frontend/src/admin/components/DataTable.jsx
+import React from 'react';
 
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/ui/card';
-import FileUploader from '../components/FileUploader';
-import { ArrowRight, FileCheck, Info } from 'lucide-react';
-import { Button } from '@/ui/button';
-
-export default function DataUpload({ onNext }) {
-  const [status, setStatus] = useState('idle');
-
-  const handleFiles = (parsed) => {
-    localStorage.setItem('presidenciales_raw', JSON.stringify(parsed));
-    localStorage.setItem('congresales_raw', JSON.stringify(parsed));
-    localStorage.setItem('municipales_raw', JSON.stringify(parsed));
-    setStatus('uploaded');
-    setTimeout(() => onNext && onNext(), 800);
-  };
-
-  const loadSample = () => {
-    const sampleData = [
-      { dni: '11111111', candidato: 'Perez', region: 'Lima', fecha: '2025-11-03', voto: 'Perez' },
-      { dni: '22222222', candidato: 'Gonzales', region: 'Cusco', fecha: '2025-11-03', voto: 'Gonzales' },
-      { dni: '33333333', candidato: 'Lopez', region: 'Lima', fecha: '2025-11-04', voto: 'Lopez' },
-    ];
-    
-    localStorage.setItem('presidenciales_raw', JSON.stringify(sampleData));
-    localStorage.setItem('congresales_raw', JSON.stringify(sampleData));
-    localStorage.setItem('municipales_raw', JSON.stringify(sampleData));
-    localStorage.setItem('votes_real', JSON.stringify(sampleData));
-    
-    setStatus('sample-loaded');
-    setTimeout(() => onNext && onNext(), 600);
-  };
-
+export default function DataTable({ rows = [] }){
+  if (!rows || rows.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-48 text-slate-500">
+        <p>No hay datos para mostrar</p>
+      </div>
+    );
+  }
+  
+  const headers = Object.keys(rows[0] || {});
+  
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <Card className="bg-card/80 border-border backdrop-blur-sm shadow-xl">
-        <CardContent className="pt-8">
-          <FileUploader onParsed={handleFiles} />
-        </CardContent>
-      </Card>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          {status === 'idle' && <Info className="w-5 h-5 text-blue-400" />}
-          {status === 'uploaded' && <FileCheck className="w-5 h-5 text-green-500" />}
-          {status === 'sample-loaded' && <FileCheck className="w-5 h-5 text-green-500" />}
-          
-          <span>
-            {status === 'idle' && 'Esperando archivo CSV para análisis...'}
-            {status === 'uploaded' && 'Archivo procesado. Listo para limpiar.'}
-            {status ==='sample-loaded' && 'Datos de ejemplo cargados. Listo para limpiar.'}
-          </span>
-        </div>
-        
-        <Button
-          variant="outline"
-          className="bg-card/80 border-border text-primary hover:text-primary hover:border-primary hover:bg-accent"
-          onClick={loadSample}
-        >
-          Usar datos de ejemplo
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
+    <div className="w-full overflow-hidden bg-[#0f172a]">
+      <div className="overflow-x-auto max-h-[500px] custom-scrollbar">
+        <table className="w-full text-sm text-left border-collapse">
+          <thead className="text-xs font-bold text-slate-400 uppercase bg-slate-900 sticky top-0 z-10 shadow-sm">
+            <tr>
+              {headers.map(h => (
+                <th key={h} className="px-6 py-4 tracking-wider border-b border-slate-800 whitespace-nowrap">
+                  {h.replace(/_/g, ' ')}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800/50">
+            {rows.map((r, idx) => (
+              <tr key={idx} className="hover:bg-slate-800/30 transition-colors group">
+                {headers.map(h => (
+                  <td key={h} className="px-6 py-3 whitespace-nowrap text-slate-300 font-medium group-hover:text-white">
+                    {typeof r[h] === 'number' 
+                      ? <span className="font-mono text-emerald-400">{r[h].toLocaleString()}</span> 
+                      : r[h]
+                    }
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="bg-slate-900/50 px-6 py-2 border-t border-slate-800">
+        <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Total: {rows.length} registros</span>
       </div>
     </div>
-  );
+  )
 }

@@ -4,52 +4,70 @@
 
 @layer base {
   :root {
-    /* Modo oscuro - Azul oscuro profesional para fondo */
-    --background: 220 40% 8%; /* Dark Navy Blue */
-    --foreground: 210 40% 98%; /* White */
-    --card: 220 35% 12%; /* Dark Blue Card */
-    --card-foreground: 210 40% 98%;
-    --popover: 220 40% 8%;
-    --popover-foreground: 210 40% 98%;
-    /* Amarillo oscuro/dorado para primary (colores de Perú) */
-    --primary: 45 100% 45%; /* Dark Gold/Yellow */
-    --primary-foreground: 220 40% 8%;
-    --secondary: 220 30% 15%; /* Dark Blue Secondary */
-    --secondary-foreground: 210 40% 98%;
-    --muted: 220 25% 18%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 45 100% 50%; /* Gold Accent */
-    --accent-foreground: 220 40% 8%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 30% 20%;
-    --input: 220 30% 15%;
-    --ring: 45 100% 45%; /* Gold ring */
+    /* --- TEMA OSCURO (Por defecto) --- */
+    --background: 222 47% 11%; /* Azul noche profundo */
+    
+    /* Texto en modo oscuro: No usamos blanco puro (100%), sino un 90% para no encandilar */
+    --foreground: 210 20% 90%; 
+
+    --card: 222 47% 13%;
+    --card-foreground: 210 20% 90%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 20% 90%;
+    
+    --primary: 45 93% 47%; /* Dorado */
+    --primary-foreground: 222 47% 11%; /* Texto oscuro sobre dorado */
+    
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 20% 90%;
+    
+    --muted: 217 33% 20%;
+    --muted-foreground: 215 20% 70%; /* Gris suave para textos secundarios */
+    
+    --accent: 217 33% 25%;
+    --accent-foreground: 210 20% 90%;
+    
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 20% 90%;
+    
+    --border: 217 33% 20%;
+    --input: 217 33% 17%;
+    --ring: 45 93% 47%;
     --radius: 0.5rem;
   }
 
   .light {
-    /* Modo claro - Paleta minimalista profesional */
-    --background: 0 0% 99.5%; /* Blanco suave casi puro */
-    --foreground: 222 47% 11%; /* Azul oscuro intenso para texto - mejor legibilidad */
-    --card: 0 0% 100%; /* Blanco puro para tarjetas */
+    /* --- TEMA CLARO (SOLUCIÓN AL BLANCO FUERTE) --- */
+    /* Usamos un tono "Gris Hueso" (98% luminosidad) en vez de blanco puro */
+    --background: 220 14% 96%; 
+    
+    /* El texto es un azul muy oscuro, no negro puro, para mejor lectura */
+    --foreground: 222 47% 11%; 
+
+    --card: 0 0% 100%; /* Las tarjetas sí pueden ser blancas para resaltar sobre el fondo gris */
     --card-foreground: 222 47% 11%;
+    
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    /* Dorado elegante para primary (colores de Perú) - más refinado */
-    --primary: 43 96% 56%; /* Oro más profesional y nítido */
-    --primary-foreground: 222 47% 11%; /* Texto oscuro sobre oro */
-    --secondary: 210 20% 98%; /* Azul muy claro y suave */
+    
+    --primary: 45 93% 47%;
+    --primary-foreground: 222 47% 11%;
+    
+    --secondary: 220 14% 93%; /* Gris un poco más oscuro para elementos secundarios */
     --secondary-foreground: 222 47% 11%;
-    --muted: 220 13% 95%; /* Gris muy claro minimalista */
-    --muted-foreground: 215 16% 47%; /* Gris medio para texto secundario */
-    --accent: 43 96% 62%; /* Oro accent más brillante pero elegante */
+    
+    --muted: 220 14% 93%;
+    --muted-foreground: 215 16% 47%;
+    
+    --accent: 220 14% 90%; /* Acento suave para hovers */
     --accent-foreground: 222 47% 11%;
-    --destructive: 0 72% 51%; /* Rojo más profesional */
-    --destructive-foreground: 0 0% 98%;
-    --border: 220 13% 91%; /* Borde suave y discreto */
-    --input: 220 13% 96%; /* Input muy claro */
-    --ring: 43 96% 56%; /* Ring dorado elegante */
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 220 13% 91%; /* Bores sutiles */
+    --input: 220 13% 91%;
+    --ring: 45 93% 47%;
   }
 }
 
@@ -62,95 +80,39 @@
     scroll-behavior: smooth;
   }
 
-  /* --- AQUÍ ESTÁ LA REGLA ÚNICA Y CORRECTA --- */
-  body {
-    /* Aplica fondo y texto según el tema */
-    @apply bg-background text-foreground; 
-    
-    font-family: 'Inter', sans-serif;
-
-    /* Gradientes profesionales para modo oscuro (por defecto) */
-    background-image: 
-      radial-gradient(at 10% 10%, hsla(45, 100%, 45%, 0.12) 0px, transparent 50%),
-      radial-gradient(at 90% 80%, hsla(220, 40%, 15%, 0.3) 0px, transparent 50%),
-      radial-gradient(at 50% 50%, hsla(220, 40%, 8%, 0.8) 0px, transparent 50%);
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
   }
 
-  /* Gradientes minimalistas y profesionales para modo claro */
-  html.light body {
-    background-image: 
-      radial-gradient(at 0% 0%, hsla(43, 96%, 56%, 0.03) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, hsla(220, 13%, 95%, 0.4) 0px, transparent 50%),
-      linear-gradient(135deg, hsla(0, 0%, 99.5%, 1) 0%, hsla(210, 20%, 99%, 1) 100%);
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+    
+    /* Fondo optimizado: Suave degradado en ambos temas */
+    background-image: radial-gradient(at top center, hsl(var(--primary) / 0.05), transparent 40%);
     background-attachment: fixed;
   }
 }
 
-/* Animación de gradiente animado para producción */
-@keyframes gradient-shift {
-  0%, 100% {
-    background-position: 0% 50%;
+/* --- OPTIMIZACIÓN PARA MÓVIL (Sin lag) --- */
+@media (max-width: 768px) {
+  .backdrop-blur-sm, .backdrop-blur-md, .backdrop-blur-lg {
+    backdrop-filter: none !important;
+    /* Usamos el color de la tarjeta con 98% opacidad */
+    background-color: hsl(var(--card) / 0.98) !important;
   }
-  50% {
-    background-position: 100% 50%;
+  
+  .shadow-2xl, .shadow-xl {
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important;
+  }
+
+  body {
+    background-attachment: scroll !important;
   }
 }
 
-.animated-gradient {
-  background: linear-gradient(-45deg, 
-    hsl(220, 40%, 8%), 
-    hsl(220, 35%, 12%), 
-    hsl(220, 40%, 10%), 
-    hsl(220, 30%, 9%)
-  );
-  background-size: 400% 400%;
-  animation: gradient-shift 15s ease infinite;
-}
-
-/* Utilidades para modo claro - colores adaptativos */
-@layer utilities {
-  /* Texto adaptativo - blanco en oscuro, oscuro en claro */
-  html:not(.light) .text-adaptive {
-    @apply text-white;
-  }
-  
-  html.light .text-adaptive {
-    @apply text-foreground;
-  }
-
-  /* Texto secundario adaptativo */
-  html:not(.light) .text-adaptive-muted {
-    @apply text-gray-300;
-  }
-  
-  html.light .text-adaptive-muted {
-    @apply text-muted-foreground;
-  }
-
-  /* Fondo de card adaptativo */
-  html:not(.light) .bg-card-adaptive {
-    @apply bg-card/80;
-  }
-  
-  html.light .bg-card-adaptive {
-    @apply bg-card;
-  }
-
-  /* Sombra adaptativa para cards */
-  html:not(.light) .shadow-card-adaptive {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-  }
-  
-  html.light .shadow-card-adaptive {
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  }
-}
-
-/* Estilos mejorados para el modo claro */
-html.light {
-  /* Mejoras en sombras para modo claro */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
+/* Scrollbar integrado al tema */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: hsl(var(--muted-foreground) / 0.3); border-radius: 20px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: hsl(var(--muted-foreground) / 0.5); }

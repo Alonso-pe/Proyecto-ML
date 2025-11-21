@@ -1,509 +1,265 @@
-// App.jsx (Conectado)
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
 import { Link as ScrollLink } from 'react-scroll';
-import { ArrowUp, CheckSquare, Lock, BarChart, FileText, Users, Calendar, Vote, Shield, TrendingUp, Search, UserCheck, ClipboardCheck, Settings, Hand, Gavel, CheckCircle2 } from 'lucide-react';
+import { ArrowUp, CheckSquare, Lock, BarChart, FileText, Users, Calendar, Vote, ShieldCheck, TrendingUp, Search, ClipboardCheck, Settings, Hand, Gavel, CheckCircle2, Loader2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import VoterVerification from '@/components/VoterVerification';
 import Section from '@/components/Section';
 import { Card, CardHeader, CardTitle, CardContent } from '@/ui/card.jsx';
 import { Button } from '@/ui/button.jsx';
-import ElectionSelection from '@/components/ElectionSelection'; 
-import AdminLayout from '@/admin/AdminLayout';
 
-const StepCard = ({
-  icon: Icon,
-  title,
-  description
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 30 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    whileHover={{ y: -5 }}
-    transition={{ duration: 0.3 }}
-  >
-    <Card className="bg-card/80 dark:bg-card/80 border-primary/30 dark:border-primary/30 text-center h-full hover:border-primary/50 dark:hover:border-primary/50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-primary/20 dark:hover:shadow-primary/20">
+const VoterVerification = lazy(() => import('@/components/VoterVerification'));
+const ElectionSelection = lazy(() => import('@/components/ElectionSelection'));
+const AdminLayout = lazy(() => import('@/admin/AdminLayout'));
+
+const LoadingScreen = () => (
+  <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm">
+    <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+    <p className="text-lg font-medium text-muted-foreground animate-pulse">Cargando sistema...</p>
+  </div>
+);
+
+// Tarjeta optimizada para ambos temas
+const StepCard = ({ icon: Icon, title, description }) => (
+  <div className="h-full">
+    <Card className="bg-card/80 border-primary/20 text-center h-full hover:border-primary/50 transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 group">
       <CardHeader>
-        <div className="mx-auto bg-primary/20 text-primary rounded-full h-20 w-20 flex items-center justify-center mb-4 border-2 border-primary/30 shadow-lg">
+        <div className="mx-auto bg-primary/10 text-primary rounded-full h-20 w-20 flex items-center justify-center mb-4 border border-primary/30 shadow-inner group-hover:scale-110 transition-transform">
           <Icon className="h-10 w-10" />
         </div>
-        <CardTitle className="text-xl md:text-2xl text-card-foreground font-bold">{title}</CardTitle>
+        {/* Título adaptable (Blanco suave en Dark, Oscuro en Light) */}
+        <CardTitle className="text-xl md:text-2xl font-bold text-foreground">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <p className="text-muted-foreground leading-relaxed">{description}</p>
       </CardContent>
     </Card>
-  </motion.div>
+  </div>
 );
 
 function App() {
-  
   const [view, setView] = useState('landing');
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Función para ir a la selección (la llama VoterVerification en modo usuario)
-  const handleVerificationSuccess = () => {
-    setView('selection');
-  };
-
-  // Función para ir al panel de administración (la llama VoterVerification en modo admin)
-  const handleAdminVerificationSuccess = () => {
-    setIsAdmin(true);
-    setView('admin');
-  };
-
-  // --- 1. FUNCIÓN AGREGADA ---
-  // Función para volver al inicio (la llama ElectionSelection)
-  const handleGoBack = () => {
-    setView('landing');
-  };
+  const handleVerificationSuccess = () => setView('selection');
+  const handleAdminVerificationSuccess = () => { setIsAdmin(true); setView('admin'); };
+  const handleGoBack = () => setView('landing');
 
   useEffect(() => {
     const stored = localStorage.getItem('isAdmin');
     if (stored === 'true') setIsAdmin(true);
   }, []);
 
-  return <div className='min-h-screen flex flex-col bg-background'>
+  if (view === 'selection') return <Suspense fallback={<LoadingScreen />}><ElectionSelection onGoBack={handleGoBack} /></Suspense>;
+  if (view === 'admin' && isAdmin) return <Suspense fallback={<LoadingScreen />}><AdminLayout onLogout={() => { localStorage.removeItem('isAdmin'); setIsAdmin(false); setView('landing'); }} /></Suspense>;
+
+  return (
+    <div className='min-h-screen flex flex-col bg-background overflow-x-hidden selection:bg-primary/30 text-foreground'>
       
-  {view === 'landing' ? (
-        
-        // --- VISTA "LANDING" (INICIO) ---
-        <> 
-          <Helmet>
-            <title>Sistema de Votación Ciudadana del Perú</title>
-            <meta name="description" content="Plataforma oficial para la emisión del voto electrónico en las elecciones del Perú. Verifique su identidad y participe de forma segura." />
-            <link rel="preconnect" href="https://fonts.googleapis.com" />
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet" />
-          </Helmet>
+      {(view === 'user-verification' || view === 'admin-verification') && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-md my-auto relative">
+            <Suspense fallback={<LoadingScreen />}>
+              <VoterVerification 
+                mode={view === 'admin-verification' ? 'admin' : 'user'}
+                onVerificationSuccess={view === 'admin-verification' ? handleAdminVerificationSuccess : handleVerificationSuccess}
+                onClose={() => setView('landing')}
+              />
+            </Suspense>
+          </div>
+        </div>
+      )}
+
+      <Helmet>
+        <title>Sistema de Votación Ciudadana del Perú</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+      </Helmet>
+      
+      <Header onAdminOpen={() => setView('admin-verification')} />
+      
+      <main className='flex-grow'>
+        <section id="inicio" className="relative flex items-center justify-center min-h-[92vh] py-12 px-4 overflow-hidden">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div 
+              className="absolute inset-0 z-0 opacity-25 dark:opacity-30 bg-cover bg-center"
+              style={{
+                backgroundImage: 'url(https://upload.wikimedia.org/wikipedia/commons/c/cf/Flag_of_Peru.svg)',
+                transform: 'scale(1.05)'
+              }}
+            />
+            <div className="absolute inset-0 z-10 bg-gradient-to-b from-background/90 via-background/70 to-background"></div>
+          </div>
           
-          <Header onAdminOpen={() => {
-              setView('admin-verification');
-            }} />
-          
-          <main className='flex-grow'>
-            <section id="inicio" className="relative flex items-center justify-center min-h-screen py-12 px-4 overflow-hidden">
-              {/* Fondo con bandera del Perú */}
-              <div className="absolute inset-0 overflow-hidden">
-                {/* Bandera del Perú */}
-                <div 
-                  className="absolute inset-0 z-0"
-                  style={{
-                    backgroundImage: 'url(https://upload.wikimedia.org/wikipedia/commons/c/cf/Flag_of_Peru.svg)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                    filter: 'brightness(0.7)'
-                  }}
-                ></div>
-                {/* Overlay muy sutil para mantener legibilidad del texto */}
-                <div className="absolute inset-0 z-10 bg-background/20"></div>
-              </div>
+          <div className="relative z-20 w-full max-w-5xl mx-auto mt-12 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="space-y-8"
+            >
+              <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-foreground drop-shadow-sm">
+                Votación
+                <span className="block text-primary mt-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-amber-500 animate-soft-glow">
+                  Ciudadana Perú
+                </span>
+              </h1>
+              <p className="text-xl md:text-2xl text-muted-foreground/90 max-w-3xl mx-auto leading-relaxed font-light">
+                Plataforma oficial, segura y transparente para el ejercicio democrático.
+              </p>
               
-              {/* Contenido principal */}
-              <div className="relative z-20 w-full max-w-4xl mx-auto mt-16">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8 }}
-                  className="text-center space-y-6"
+              <div className="pt-4">
+                {/* Botón Principal adaptado */}
+                <Button
+                  onClick={() => setView('user-verification')}
+                  className="h-16 px-12 text-xl font-bold rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all hover:scale-105 active:scale-95 bg-primary text-primary-foreground hover:bg-primary/90"
                 >
-                  <h1 className="text-4xl md:text-6xl font-extrabold text-foreground mb-3 drop-shadow-2xl">
-                    Sistema de Votación
-                    <span className="block text-primary mt-2">Ciudadana del Perú</span>
-                  </h1>
-                  <p className="text-lg md:text-xl text-foreground/90 mb-6 max-w-2xl mx-auto leading-relaxed">
-                    Participa de forma segura y transparente en las elecciones democráticas del Perú
-                  </p>
-                  
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                  >
-                    <Button
-                      onClick={() => setView('user-verification')}
-                      className="h-14 px-10 text-lg font-bold bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/50 hover:shadow-primary/70 transition-all duration-300 transform hover:scale-105"
-                      size="lg"
-                    >
-                      Iniciar Votación
-                    </Button>
-                  </motion.div>
-                  
-                </motion.div>
+                  Iniciar Votación
+                </Button>
               </div>
-            </section>
+            </motion.div>
+          </div>
+        </section>
 
-            <Section id="como-votar" title="¿Cómo Votar?">
-              <div className="grid md:grid-cols-3 gap-8">
-                <StepCard icon={Users} title="1. Verifica tu Identidad" description="Ingresa tu DNI en la sección principal para validar tus datos y confirmar que estás habilitado para votar." />
-                <StepCard icon={CheckSquare} title="2. Elige tu Opción" description="Una vez dentro de la cabina de votación virtual, selecciona al candidato o la opción de tu preferencia." />
-                <StepCard icon={Lock} title="3. Confirma y Emite tu Voto" description="Revisa tu selección y confirma. Tu voto será encriptado y registrado de forma anónima y segura." />
-              </div>
-            </Section>
+        <Section id="como-votar" title="¿Cómo Votar?">
+          <div className="grid md:grid-cols-3 gap-8">
+            <StepCard icon={Users} title="1. Identifícate" description="Ingresa tu DNI para validar tus datos y confirmar que estás habilitado en el padrón electoral." />
+            <StepCard icon={CheckSquare} title="2. Elige" description="Selecciona a tus candidatos preferidos en las cédulas virtuales interactivas." />
+            <StepCard icon={Lock} title="3. Confirma" description="Tu voto es encriptado y enviado de forma anónima, segura e inmutable." />
+          </div>
+        </Section>
 
-            <Section id="informacion" title="Información del Proceso" className="bg-card/30">
-              <div className="max-w-7xl mx-auto space-y-16">
-                {/* Cronograma General */}
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="bg-card/80 rounded-2xl p-8 md:p-12 border-2 border-primary/30 shadow-2xl"
-                >
-                  <h3 className="text-2xl md:text-3xl font-bold text-card-foreground mb-8 text-center">Cronograma General</h3>
-                  
-                  {/* Timeline */}
-                  <div className="relative">
-                    <div className="absolute top-8 left-0 right-0 h-1 bg-primary/50 hidden md:block"></div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4 relative">
-                      {[
-                        { date: '15 de mayo', title: 'Inicio de registro', icon: Calendar, color: 'bg-slate-600' },
-                        { date: '22 de mayo', title: 'Inicio del votación', icon: Vote, color: 'bg-primary' },
-                        { date: '30 de mayo', title: 'Cierre del proceso', icon: Lock, color: 'bg-slate-700' },
-                        { date: '2 de junio', title: 'Cierre del Resultados finales', icon: TrendingUp, color: 'bg-indigo-600' }
-                      ].map((item, index) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          whileInView={{ opacity: 1, scale: 1 }}
-                          viewport={{ once: true }}
-                          transition={{ delay: index * 0.1 }}
-                          className="relative flex flex-col items-center text-center"
-                        >
-                          <div className={`${item.color} rounded-full p-4 mb-4 shadow-lg relative z-10`}>
-                            <item.icon className="h-6 w-6 md:h-8 md:w-8 text-white" />
-                          </div>
-                          <div className="bg-card/90 rounded-lg p-4 border border-primary/20 w-full">
-                            <p className="text-primary font-bold text-sm md:text-base mb-1">{item.date}</p>
-                            <p className="text-card-foreground text-xs md:text-sm">{item.title}</p>
-                          </div>
-                        </motion.div>
-                      ))}
+        <Section id="informacion" title="Cronograma Oficial" className="bg-secondary/20">
+          <div className="max-w-6xl mx-auto space-y-16">
+            
+            <div className="bg-card/80 rounded-2xl p-8 md:p-12 border border-primary/20 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary/0 via-primary/50 to-primary/0"></div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                {[
+                  { date: '15 May', title: 'Inicio Registro', icon: Calendar, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+                  { date: '22 May', title: 'Día de Votación', icon: Vote, color: 'text-primary', bg: 'bg-primary/10' },
+                  { date: '30 May', title: 'Cierre Proceso', icon: Lock, color: 'text-red-500', bg: 'bg-red-500/10' },
+                  { date: '02 Jun', title: 'Resultados', icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10' }
+                ].map((item, i) => (
+                  <div key={i} className="flex flex-col items-center text-center group">
+                    <div className={`${item.bg} ${item.color} rounded-full p-5 mb-4 shadow-md transition-transform group-hover:scale-110 border border-white/5`}>
+                      <item.icon className="h-8 w-8" />
+                    </div>
+                    <div className="bg-background/50 rounded-xl p-4 w-full border border-border/50">
+                      <p className={`font-bold text-lg mb-1 ${item.color}`}>{item.date}</p>
+                      <p className="text-muted-foreground text-sm font-medium">{item.title}</p>
                     </div>
                   </div>
-                </motion.div>
-
-                {/* Etapas del Proceso */}
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                >
-                  <h3 className="text-2xl md:text-3xl font-bold text-card-foreground mb-8 text-center">Etapas del Proceso</h3>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[
-                      { 
-                        title: 'Registro o verificación de identidad', 
-                        description: 'Confirma tu identidad y accede al sistema.', 
-                        icon: Search, 
-                        color: 'bg-slate-600',
-                        bgColor: 'bg-slate-600/20',
-                        borderColor: 'border-slate-600/50'
-                      },
-                      { 
-                        title: 'Emisión del voto', 
-                        description: 'Elige tu opción dentro del sistema seguro.', 
-                        icon: Vote, 
-                        color: 'bg-slate-700',
-                        bgColor: 'bg-slate-700/20',
-                        borderColor: 'border-slate-700/50'
-                      },
-                      { 
-                        title: 'Confirmación del voto', 
-                        description: 'Revisa y valida tu elección.', 
-                        icon: ClipboardCheck, 
-                        color: 'bg-green-500',
-                        bgColor: 'bg-green-500/20',
-                        borderColor: 'border-green-500/50'
-                      },
-                      { 
-                        title: 'Cierre y conteo', 
-                        description: 'El sistema contabiliza automáticamente los votos.', 
-                        icon: BarChart, 
-                        color: 'bg-indigo-600',
-                        bgColor: 'bg-indigo-600/20',
-                        borderColor: 'border-indigo-600/50'
-                      },
-                      { 
-                        title: 'Resultados finales', 
-                        description: 'Se publican de manera transparente y verificable.', 
-                        icon: Settings, 
-                        color: 'bg-primary',
-                        bgColor: 'bg-primary/20',
-                        borderColor: 'border-primary/50'
-                      }
-                    ].map((stage, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: index * 0.1 }}
-                        whileHover={{ y: -5, scale: 1.02 }}
-                        className={`${stage.bgColor} rounded-xl p-6 border-2 ${stage.borderColor} shadow-xl hover:shadow-2xl transition-all duration-300`}
-                      >
-                        <div className={`${stage.color} rounded-lg p-3 w-fit mb-4`}>
-                          <stage.icon className="h-6 w-6 text-white" />
-                        </div>
-                        <h4 className="text-card-foreground font-bold text-lg mb-2">{stage.title}</h4>
-                        <p className="text-muted-foreground text-sm leading-relaxed">{stage.description}</p>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-
-                {/* Tipos de Votación */}
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="bg-card/80 rounded-2xl p-8 md:p-12 border-2 border-primary/30 shadow-2xl"
-                >
-                  <h3 className="text-2xl md:text-3xl font-bold text-card-foreground mb-8 text-center">Tipos de Votación</h3>
-                  <div className="grid md:grid-cols-3 gap-8">
-                    {[
-                      { 
-                        title: 'Participación digital', 
-                        description: 'Votación en línea desde dispositivos seguros.', 
-                        icon: Hand, 
-                        color: 'bg-indigo-600'
-                      },
-                      { 
-                        title: 'Consulta ciudadana', 
-                        description: 'Opinión pública sobre políticas o proyectos.', 
-                        icon: BarChart, 
-                        color: 'bg-slate-600'
-                      },
-                      { 
-                        title: 'Elección local o interna', 
-                        description: 'Procesos institucionales o comunales.', 
-                        icon: Gavel, 
-                        color: 'bg-indigo-600'
-                      }
-                    ].map((type, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: index * 0.1 }}
-                        whileHover={{ scale: 1.05 }}
-                        className="flex flex-col items-center text-center"
-                      >
-                        <div className={`${type.color} rounded-full p-6 mb-4 shadow-lg`}>
-                          <type.icon className="h-8 w-8 text-white" />
-                        </div>
-                        <h4 className="text-card-foreground font-bold text-lg mb-2">{type.title}</h4>
-                        <p className="text-muted-foreground text-sm leading-relaxed">{type.description}</p>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-
-                {/* Reglas y Requisitos Básicos */}
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="bg-card/80 rounded-2xl p-8 md:p-12 border-2 border-primary/30 shadow-2xl"
-                >
-                  <h3 className="text-2xl md:text-3xl font-bold text-card-foreground mb-8 text-center">Reglas y Requisitos Básicos</h3>
-                  <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-                    {[
-                      'Tener DNI vigente.',
-                      'Ser mayor de 18 años.',
-                      'Un solo voto por persona.',
-                      'Respetar los términos y condiciones del proceso.'
-                    ].map((requirement, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: index * 0.1 }}
-                        className="flex items-center space-x-3 bg-card/50 rounded-lg p-4 border border-primary/20"
-                      >
-                        <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0" />
-                        <p className="text-card-foreground text-sm md:text-base">{requirement}</p>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
+                ))}
               </div>
-            </Section>
+            </div>
 
-            <Section id="transparencia" title="Transparencia y Seguridad">
-              <div className="grid md:grid-cols-2 gap-12 items-center">
-                <motion.div
-                  initial={{ opacity: 0, x: -50 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  className="space-y-6 text-muted-foreground"
-                >
-                  <p className="text-lg leading-relaxed">
-                    La confianza es la base de la democracia. Este sistema utiliza tecnología de punta para garantizar 
-                    la seguridad y transparencia de tu voto en las elecciones del Perú.
-                  </p>
-                  <ul className="space-y-5">
-                    <li className="flex items-start p-4 bg-card/50 rounded-lg border border-primary/20">
-                      <div className="bg-primary/20 p-2 rounded-lg mr-4 flex-shrink-0">
-                        <Lock className="h-6 w-6 text-primary" />
+            <div>
+              <h3 className="text-3xl font-bold text-center mb-10 text-foreground">Etapas del Proceso</h3>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[
+                  { title: 'Verificación', desc: 'Validación biométrica y DNI.', icon: Search, color: 'text-blue-500' },
+                  { title: 'Emisión', desc: 'Voto secreto y encriptado.', icon: Vote, color: 'text-primary' },
+                  { title: 'Confirmación', desc: 'Validación de constancia.', icon: ClipboardCheck, color: 'text-green-500' },
+                  { title: 'Conteo', desc: 'Escrutinio automatizado.', icon: BarChart, color: 'text-purple-500' },
+                  { title: 'Resultados', desc: 'Publicación transparente.', icon: Settings, color: 'text-orange-500' }
+                ].map((stage, i) => (
+                  <div key={i} className="bg-card/60 rounded-xl p-6 border border-border hover:border-primary/30 transition-all hover:shadow-lg group">
+                    <div className="flex items-center gap-4 mb-3">
+                      <div className={`p-2 rounded-lg bg-background border border-border group-hover:border-primary/30 ${stage.color}`}>
+                        <stage.icon className="h-6 w-6" />
                       </div>
-                      <div>
-                        <strong className="text-card-foreground text-lg block mb-1">Voto Encriptado</strong>
-                        <span>Cada voto es cifrado de extremo a extremo, asegurando que solo pueda ser contado, no rastreado.</span>
-                      </div>
-                    </li>
-                    <li className="flex items-start p-4 bg-card/50 rounded-lg border border-primary/20">
-                      <div className="bg-primary/20 p-2 rounded-lg mr-4 flex-shrink-0">
-                        <FileText className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <strong className="text-white text-lg block mb-1">Auditoría Pública</strong>
-                        <span>El código y los procesos están abiertos a la supervisión de entidades civiles y académicas para garantizar la equidad.</span>
-                      </div>
-                    </li>
-                    <li className="flex items-start p-4 bg-card/50 rounded-lg border border-primary/20">
-                      <div className="bg-primary/20 p-2 rounded-lg mr-4 flex-shrink-0">
-                        <BarChart className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <strong className="text-white text-lg block mb-1">Resultados Verificables</strong>
-                        <span>Se publicarán registros anónimos que permiten a cualquiera verificar el conteo final sin comprometer la privacidad.</span>
-                      </div>
-                    </li>
-                  </ul>
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, x: 50 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  className="relative"
-                >
-                  <div className="relative rounded-xl overflow-hidden shadow-2xl border-2 border-primary/30">
-                    <img 
-                      className="w-full h-auto" 
-                      alt="Diagrama de seguridad del voto electrónico" 
-                      src="https://horizons-cdn.hostinger.com/faebab8c-5e00-4302-9124-6ab376c2b556/unnamed-HL4LM.png" 
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent pointer-events-none"></div>
+                      <h4 className="font-bold text-lg text-foreground">{stage.title}</h4>
+                    </div>
+                    <p className="text-muted-foreground text-sm pl-14">{stage.desc}</p>
                   </div>
-                </motion.div>
+                ))}
               </div>
-            </Section>
+            </div>
 
-            <Section id="noticias" title="Últimas Noticias" className="bg-card/30">
-              <div className="grid md:grid-cols-3 gap-8">
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <Card className="bg-card/90 border-primary/30 hover:border-primary/50 transition-all duration-300 shadow-xl hover:shadow-2xl h-full">
-                    <CardHeader>
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <CardTitle className="text-card-foreground text-lg font-bold">Jornada Electoral Exitosa</CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground leading-relaxed">
-                        La ONPE reporta una participación histórica en el primer día de votación electrónica en todo el territorio peruano.
-                      </p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-                
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <Card className="bg-card/90 border-primary/30 hover:border-primary/50 transition-all duration-300 shadow-xl hover:shadow-2xl h-full">
-                    <CardHeader>
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <CardTitle className="text-card-foreground text-lg font-bold">Medidas de Seguridad</CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground leading-relaxed">
-                        Expertos internacionales validan la robustez del sistema de votación implementado para garantizar la transparencia electoral.
-                      </p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-                
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <Card className="bg-card/90 border-primary/30 hover:border-primary/50 transition-all duration-300 shadow-xl hover:shadow-2xl h-full">
-                    <CardHeader>
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <CardTitle className="text-card-foreground text-lg font-bold">Cierre de Votaciones</CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground leading-relaxed">
-                        Recuerde que el proceso finaliza el 6 de noviembre a las 17:00. ¡Ejercite su derecho al voto y participe en la democracia peruana!
-                      </p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+            <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto bg-card/40 p-8 rounded-2xl border border-dashed border-border">
+              <h3 className="text-xl font-bold md:col-span-2 text-center mb-2 text-foreground">Requisitos Obligatorios</h3>
+              {['DNI vigente (azul o electrónico).', 'Ser mayor de 18 años.', 'Figurar en el padrón electoral.', 'No tener multas electorales pendientes.'].map((req, i) => (
+                <div key={i} className="flex items-center space-x-3 bg-background/50 p-3 rounded-lg">
+                  <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span className="text-sm font-medium text-foreground">{req}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Section>
+
+        <Section id="transparencia" title="Seguridad y Transparencia">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-8">
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Utilizamos <strong>Blockchain</strong> y encriptación homomórfica para garantizar que tu voto sea matemáticamente imposible de alterar o rastrear hacia tu identidad.
+              </p>
+              <div className="space-y-4">
+                {[
+                  { title: 'Voto Secreto', desc: 'Desvinculación total entre identidad y elección.', icon: Lock },
+                  { title: 'Código Abierto', desc: 'Software auditable por cualquier ciudadano.', icon: FileText },
+                  { title: 'Inmutabilidad', desc: 'Registro distribuido imposible de modificar.', icon: ShieldCheck }
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-4 p-4 rounded-xl bg-card/50 border border-border hover:border-primary/40 transition-colors">
+                    <div className="bg-primary/10 p-3 rounded-full h-fit text-primary">
+                      <item.icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-lg text-foreground">{item.title}</h4>
+                      <p className="text-muted-foreground text-sm">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </Section>
-          </main>
+            </div>
+            <div className="relative rounded-2xl overflow-hidden shadow-lg border border-primary/20 group">
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60"></div>
+              <img 
+                src="https://horizons-cdn.hostinger.com/faebab8c-5e00-4302-9124-6ab376c2b556/unnamed-HL4LM.png" 
+                alt="Esquema de Seguridad" 
+                className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        </Section>
 
-          <Footer />
+        <Section id="noticias" title="Actualidad Electoral" className="bg-card/20">
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { title: 'Jornada Histórica', desc: 'Récord de participación digital en las primeras 4 horas.' },
+              { title: 'Auditoría Internacional', desc: 'Observadores de la OEA validan la integridad del sistema.' },
+              { title: 'Cierre de Mesas', desc: 'El sistema cerrará puntualmente a las 17:00 hrs.' }
+            ].map((news, i) => (
+              <Card key={i} className="bg-card/80 border-primary/10 hover:border-primary/40 transition-all hover:-translate-y-1 hover:shadow-lg">
+                <CardHeader>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="flex h-3 w-3 rounded-full bg-red-500 animate-pulse"></span>
+                    <p className="text-xs font-bold text-primary uppercase tracking-wider">En vivo</p>
+                  </div>
+                  <CardTitle className="text-lg font-bold text-foreground">{news.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-sm">{news.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </Section>
+      </main>
 
-          <ScrollLink to="inicio" smooth={true} duration={500}>
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 1 }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <Button className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/50 hover:shadow-primary/70 transition-all duration-300 z-40">
-                <ArrowUp className="h-6 w-6" />
-              </Button>
-            </motion.div>
-          </ScrollLink>
-        </>
-        // --- FIN: VISTA "LANDING" ---
+      <Footer />
 
-      ) : view === 'user-verification' ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <VoterVerification 
-            mode="user" 
-            onVerificationSuccess={handleVerificationSuccess}
-            onClose={() => setView('landing')}
-          />
+      <ScrollLink to="inicio" smooth={true} duration={800} className="hidden md:block">
+        <div className="fixed bottom-8 right-8 z-40">
+          <Button className="h-14 w-14 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg transition-all hover:scale-110">
+            <ArrowUp className="h-6 w-6" />
+          </Button>
         </div>
-      ) : view === 'admin-verification' ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <VoterVerification 
-            mode="admin" 
-            onVerificationSuccess={handleAdminVerificationSuccess}
-            onClose={() => setView('landing')}
-          />
-        </div>
-      ) : view === 'selection' ? (
-        <ElectionSelection onGoBack={handleGoBack} />
-      ) : view === 'admin' && isAdmin ? (
-        <AdminLayout onLogout={() => { localStorage.removeItem('isAdmin'); setIsAdmin(false); setView('landing'); }} />
-      ) : null}
-    </div>;
+      </ScrollLink>
+    </div>
+  );
 }
+
 export default App;

@@ -1,14 +1,23 @@
 package com.dashboardia.backend.entity;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
-
 
 @Entity
 @Table(name = "errores_csv")
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgs
+@AllArgsConstructor
+public class ErroresCsv {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String errorDescripcion;
+    private String archivo;
+
+    private Instant fecha; // opcional, si quieres almacenar fecha del error
+}

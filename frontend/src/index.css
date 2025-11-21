@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Azul oscuro profesional para fondo */
+    /* Modo oscuro - Azul oscuro profesional para fondo */
     --background: 220 40% 8%; /* Dark Navy Blue */
     --foreground: 210 40% 98%; /* White */
     --card: 220 35% 12%; /* Dark Blue Card */
@@ -27,6 +27,30 @@
     --ring: 45 100% 45%; /* Gold ring */
     --radius: 0.5rem;
   }
+
+  .light {
+    /* Modo claro - Paleta minimalista profesional */
+    --background: 0 0% 99.5%; /* Blanco suave casi puro */
+    --foreground: 222 47% 11%; /* Azul oscuro intenso para texto - mejor legibilidad */
+    --card: 0 0% 100%; /* Blanco puro para tarjetas */
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    /* Dorado elegante para primary (colores de Perú) - más refinado */
+    --primary: 43 96% 56%; /* Oro más profesional y nítido */
+    --primary-foreground: 222 47% 11%; /* Texto oscuro sobre oro */
+    --secondary: 210 20% 98%; /* Azul muy claro y suave */
+    --secondary-foreground: 222 47% 11%;
+    --muted: 220 13% 95%; /* Gris muy claro minimalista */
+    --muted-foreground: 215 16% 47%; /* Gris medio para texto secundario */
+    --accent: 43 96% 62%; /* Oro accent más brillante pero elegante */
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 72% 51%; /* Rojo más profesional */
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 91%; /* Borde suave y discreto */
+    --input: 220 13% 96%; /* Input muy claro */
+    --ring: 43 96% 56%; /* Ring dorado elegante */
+  }
 }
 
 @layer base {
@@ -40,16 +64,25 @@
 
   /* --- AQUÍ ESTÁ LA REGLA ÚNICA Y CORRECTA --- */
   body {
-    /* Aplica fondo oscuro Y texto blanco */
+    /* Aplica fondo y texto según el tema */
     @apply bg-background text-foreground; 
     
     font-family: 'Inter', sans-serif;
 
-    /* Gradientes profesionales con azul oscuro y amarillo */
+    /* Gradientes profesionales para modo oscuro (por defecto) */
     background-image: 
       radial-gradient(at 10% 10%, hsla(45, 100%, 45%, 0.12) 0px, transparent 50%),
       radial-gradient(at 90% 80%, hsla(220, 40%, 15%, 0.3) 0px, transparent 50%),
       radial-gradient(at 50% 50%, hsla(220, 40%, 8%, 0.8) 0px, transparent 50%);
+  }
+
+  /* Gradientes minimalistas y profesionales para modo claro */
+  html.light body {
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(43, 96%, 56%, 0.03) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(220, 13%, 95%, 0.4) 0px, transparent 50%),
+      linear-gradient(135deg, hsla(0, 0%, 99.5%, 1) 0%, hsla(210, 20%, 99%, 1) 100%);
+    background-attachment: fixed;
   }
 }
 
@@ -72,4 +105,52 @@
   );
   background-size: 400% 400%;
   animation: gradient-shift 15s ease infinite;
+}
+
+/* Utilidades para modo claro - colores adaptativos */
+@layer utilities {
+  /* Texto adaptativo - blanco en oscuro, oscuro en claro */
+  html:not(.light) .text-adaptive {
+    @apply text-white;
+  }
+  
+  html.light .text-adaptive {
+    @apply text-foreground;
+  }
+
+  /* Texto secundario adaptativo */
+  html:not(.light) .text-adaptive-muted {
+    @apply text-gray-300;
+  }
+  
+  html.light .text-adaptive-muted {
+    @apply text-muted-foreground;
+  }
+
+  /* Fondo de card adaptativo */
+  html:not(.light) .bg-card-adaptive {
+    @apply bg-card/80;
+  }
+  
+  html.light .bg-card-adaptive {
+    @apply bg-card;
+  }
+
+  /* Sombra adaptativa para cards */
+  html:not(.light) .shadow-card-adaptive {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  }
+  
+  html.light .shadow-card-adaptive {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+}
+
+/* Estilos mejorados para el modo claro */
+html.light {
+  /* Mejoras en sombras para modo claro */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }

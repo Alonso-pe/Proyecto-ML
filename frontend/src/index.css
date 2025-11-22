@@ -4,26 +4,70 @@
 
 @layer base {
   :root {
-    --background: 220 13% 10%; /* Dark Blue */
-    --foreground: 210 40% 98%; /* White */
-    --card: 220 13% 15%;
-    --card-foreground: 210 40% 98%;
-    --popover: 220 13% 10%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 349 75% 50%; /* Red */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 25.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 349 75% 50%;
+    /* --- TEMA OSCURO (Por defecto) --- */
+    --background: 222 47% 11%; /* Azul noche profundo */
+    
+    /* Texto en modo oscuro: No usamos blanco puro (100%), sino un 90% para no encandilar */
+    --foreground: 210 20% 90%; 
+
+    --card: 222 47% 13%;
+    --card-foreground: 210 20% 90%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 20% 90%;
+    
+    --primary: 45 93% 47%; /* Dorado */
+    --primary-foreground: 222 47% 11%; /* Texto oscuro sobre dorado */
+    
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 20% 90%;
+    
+    --muted: 217 33% 20%;
+    --muted-foreground: 215 20% 70%; /* Gris suave para textos secundarios */
+    
+    --accent: 217 33% 25%;
+    --accent-foreground: 210 20% 90%;
+    
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 20% 90%;
+    
+    --border: 217 33% 20%;
+    --input: 217 33% 17%;
+    --ring: 45 93% 47%;
     --radius: 0.5rem;
+  }
+
+  .light {
+    /* --- TEMA CLARO (SOLUCIÓN AL BLANCO FUERTE) --- */
+    /* Usamos un tono "Gris Hueso" (98% luminosidad) en vez de blanco puro */
+    --background: 220 14% 96%; 
+    
+    /* El texto es un azul muy oscuro, no negro puro, para mejor lectura */
+    --foreground: 222 47% 11%; 
+
+    --card: 0 0% 100%; /* Las tarjetas sí pueden ser blancas para resaltar sobre el fondo gris */
+    --card-foreground: 222 47% 11%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    --primary: 45 93% 47%;
+    --primary-foreground: 222 47% 11%;
+    
+    --secondary: 220 14% 93%; /* Gris un poco más oscuro para elementos secundarios */
+    --secondary-foreground: 222 47% 11%;
+    
+    --muted: 220 14% 93%;
+    --muted-foreground: 215 16% 47%;
+    
+    --accent: 220 14% 90%; /* Acento suave para hovers */
+    --accent-foreground: 222 47% 11%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 220 13% 91%; /* Bores sutiles */
+    --input: 220 13% 91%;
+    --ring: 45 93% 47%;
   }
 }
 
@@ -36,16 +80,39 @@
     scroll-behavior: smooth;
   }
 
-  /* --- AQUÍ ESTÁ LA REGLA ÚNICA Y CORRECTA --- */
-  body {
-    /* Aplica fondo oscuro Y texto blanco */
-    @apply bg-background text-foreground; 
-    
-    font-family: 'Inter', sans-serif;
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
 
-    /* Tus gradientes */
-    background-image: 
-      radial-gradient(at 10% 10%, hsla(349, 75%, 50%, 0.15) 0px, transparent 50%),
-      radial-gradient(at 90% 80%, hsla(0, 0%, 100%, 0.08) 0px, transparent 50%);
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+    
+    /* Fondo optimizado: Suave degradado en ambos temas */
+    background-image: radial-gradient(at top center, hsl(var(--primary) / 0.05), transparent 40%);
+    background-attachment: fixed;
   }
 }
+
+/* --- OPTIMIZACIÓN PARA MÓVIL (Sin lag) --- */
+@media (max-width: 768px) {
+  .backdrop-blur-sm, .backdrop-blur-md, .backdrop-blur-lg {
+    backdrop-filter: none !important;
+    /* Usamos el color de la tarjeta con 98% opacidad */
+    background-color: hsl(var(--card) / 0.98) !important;
+  }
+  
+  .shadow-2xl, .shadow-xl {
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important;
+  }
+
+  body {
+    background-attachment: scroll !important;
+  }
+}
+
+/* Scrollbar integrado al tema */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: hsl(var(--muted-foreground) / 0.3); border-radius: 20px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: hsl(var(--muted-foreground) / 0.5); }

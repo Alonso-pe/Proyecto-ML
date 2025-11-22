@@ -3,11 +3,14 @@ package com.dashboardia.backend.service;
 import org.springframework.stereotype.Service;
 
 import com.dashboardia.backend.dto.JwtResponse;
+import com.dashboardia.backend.entity.User;
+import com.dashboardia.backend.migo.MigoClient;
+import com.dashboardia.backend.migo.MigoDniResponse;
+import com.dashboardia.backend.migo.MigoException;
 import com.dashboardia.backend.repository.UserRepository;
 import com.dashboardia.backend.security.JwtUtil;
 
-public class AuthService {
-    @Service
+@Service
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -26,13 +29,17 @@ public class AuthService {
 
         // Buscar o crear usuario en DB
         User user = userRepository.findByDni(dni)
-                .orElseGet(() -> userRepository.save(new User(dni, response.getNombre())));
+                .orElseGet(() -> userRepository.save(
+                        new User(dni, response.getNombre())
+                ));
 
         // Generar JWT
         String token = jwtUtil.generateToken(user.getDni());
 
-        return new JwtResponse(token, user.getDni(), user.getNombre());
+        return new JwtResponse(
+                token,
+                user.getDni(),
+                user.getNombre()
+        );
     }
-}
-
 }

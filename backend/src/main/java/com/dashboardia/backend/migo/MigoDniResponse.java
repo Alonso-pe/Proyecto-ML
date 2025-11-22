@@ -1,4 +1,4 @@
-package com.dashboardia.backend.external.migo;
+package com.dashboardia.backend.migo;
 
 import lombok.Data;
 

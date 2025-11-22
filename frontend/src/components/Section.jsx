@@ -12,7 +12,7 @@ const Section = ({ id, title, children, className }) => {
           transition={{ duration: 0.6 }}
         >
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-extrabold text-foreground mb-4">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-4">
               {title}
             </h2>
             <div className="w-24 h-1 bg-primary mx-auto rounded-full"></div>

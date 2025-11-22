@@ -1,88 +1,55 @@
-import React, { useState } from 'react';
+import { useState } from "react";
 
-// Simulación de una base de datos de votantes
-const mockVoters = {
-  '12345678': {
-    name: 'Juan Alberto Pérez García',
-    district: 'San Isidro, Lima',
-    status: 'Habilitado para votar',
-  },
-  '87654321': {
-    name: 'María Fernanda Castillo Rojas',
-    district: 'Miraflores, Lima',
-    status: 'Voto emitido',
-  },
-   '11111111': {
-    name: 'Carlos Andrés Villena Soto',
-    district: 'Santiago de Surco, Lima',
-    status: 'Habilitado para votar',
-  },
-  '60773713': {
-    name: 'Brat Ocaña Paredes',
-    district: 'Comas, Lima',
-    status: 'Habilitado para votar',
-  },
-  '70868955': {
-    name: 'Beatriz Chipillo Mendoza',
-    district: 'Yungay, Ancash',
-    status: 'Habilitado para votar',
-  },
-  '70620660': {
-    name: 'Cristin Andia Chaves',
-    district: 'Barranca, Lima',
-    status: 'Habilitado para votar',
-  }
-};
-
-export const useVoterData = () => {
-  const [dni, setDni] = useState('');
+export default function useVoterData() {
+  const [dni, setDni] = useState("");
   const [voterData, setVoterData] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isValidDni, setIsValidDni] = useState(true);
+  const [isValidDni, setIsValidDni] = useState(false);
 
-  const handleDniChange = (e) => {
-    const value = e.target.value.replace(/\D/g, ''); // Solo números
-    setDni(value);
-    setVoterData(null);
-    setError(null);
-    if (value.length > 0 && value.length < 8) {
-      setIsValidDni(false);
-    } else {
-      setIsValidDni(true);
-    }
-  };
-
-  const validateDni = () => {
+  const validateDni = async () => {
     if (dni.length !== 8) {
-      setError('El DNI debe tener 8 dígitos.');
+      setError("El DNI debe tener 8 dígitos.");
       setIsValidDni(false);
       return;
     }
-    
+
     setIsLoading(true);
     setError(null);
     setVoterData(null);
-    
-    // Simular una llamada a API
-    setTimeout(() => {
-      const data = mockVoters[dni];
-      if (data) {
-        setVoterData(data);
-      } else {
-        setError('DNI no encontrado. Verifique el número e intente de nuevo.');
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/dni/${dni}`);
+
+      if (!response.ok) {
+        throw new Error("No encontrado");
       }
+
+      const data = await response.json();
+
+      // Ajusta la estructura para que coincida con el frontend
+      setVoterData({
+        name: `${data.nombre} ${data.apellido}`,
+        district: data.direccion,
+        status: "Habilitado para votar"
+      });
+
+      setIsValidDni(true);
+    } catch (err) {
+      setError("DNI no encontrado. Verifique el número e intente de nuevo.");
+      setIsValidDni(false);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return {
     dni,
+    setDni,
     voterData,
     error,
     isLoading,
     isValidDni,
-    handleDniChange,
     validateDni,
   };
-};
+}

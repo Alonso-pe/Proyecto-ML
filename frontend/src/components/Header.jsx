@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Home, HelpCircle, BarChart2, ShieldCheck, Info, Newspaper } from 'lucide-react';
 import { Button } from '@/ui/button';
 import { Link } from 'react-scroll';
-import DarkModeToggle from '@/components/DarkModeToggle';
 
 const Header = ({ onAdminOpen }) => {
   const navItems = [
@@ -25,10 +24,10 @@ const Header = ({ onAdminOpen }) => {
         <div className="flex justify-between items-center h-20">
           <div className="flex items-center">
             <div className="flex flex-col">
-              <span className="text-lg md:text-xl font-bold tracking-tight text-foreground">
+              <span className="text-lg md:text-xl font-bold tracking-tight text-white">
                 Votación Ciudadana
               </span>
-              <span className="text-xs text-muted-foreground hidden md:block">República del Perú</span>
+              <span className="text-xs text-gray-400 hidden md:block">República del Perú</span>
             </div>
           </div>
           <nav className="hidden md:flex items-center space-x-2">
@@ -42,7 +41,7 @@ const Header = ({ onAdminOpen }) => {
                 duration={500}
                 className="cursor-pointer"
               >
-                <Button variant="ghost" className="text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+                <Button variant="ghost" className="text-gray-300 hover:bg-white/10 hover:text-white">
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.label}
                 </Button>
@@ -50,10 +49,9 @@ const Header = ({ onAdminOpen }) => {
             ))}
           </nav>
        <div className="flex items-center space-x-2">
-         <DarkModeToggle />
          <Button 
            variant="ghost" 
-           className="text-muted-foreground hover:bg-accent hover:text-accent-foreground flex items-center" 
+           className="text-gray-300 hover:bg-white/10 hover:text-white flex items-center" 
            onClick={() => onAdminOpen && onAdminOpen()}
          >
            <BarChart2 className="h-5 w-5" />

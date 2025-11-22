@@ -16,8 +16,10 @@ public class ErroresCsv {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String errorDescripcion;
     private String archivo;
 
-    private Instant fecha; // opcional, si quieres almacenar fecha del error
+    @Column(columnDefinition = "TEXT")
+    private String detalleError;
+
+    private Instant fechaError = Instant.now();
 }

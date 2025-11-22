@@ -26,15 +26,15 @@ const StepCard = ({
     whileHover={{ y: -5 }}
     transition={{ duration: 0.3 }}
   >
-    <Card className="bg-card/80 dark:bg-card/80 border-primary/30 dark:border-primary/30 text-center h-full hover:border-primary/50 dark:hover:border-primary/50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-primary/20 dark:hover:shadow-primary/20">
+    <Card className="bg-card/80 border-primary/30 text-center h-full hover:border-primary/50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-primary/20">
       <CardHeader>
         <div className="mx-auto bg-primary/20 text-primary rounded-full h-20 w-20 flex items-center justify-center mb-4 border-2 border-primary/30 shadow-lg">
           <Icon className="h-10 w-10" />
         </div>
-        <CardTitle className="text-xl md:text-2xl text-card-foreground font-bold">{title}</CardTitle>
+        <CardTitle className="text-xl md:text-2xl text-white font-bold">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-muted-foreground leading-relaxed">{description}</p>
+        <p className="text-gray-300 leading-relaxed">{description}</p>
       </CardContent>
     </Card>
   </motion.div>
@@ -112,11 +112,11 @@ function App() {
                   transition={{ duration: 0.8 }}
                   className="text-center space-y-6"
                 >
-                  <h1 className="text-4xl md:text-6xl font-extrabold text-foreground mb-3 drop-shadow-2xl">
+                  <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-3 drop-shadow-2xl">
                     Sistema de Votación
                     <span className="block text-primary mt-2">Ciudadana del Perú</span>
                   </h1>
-                  <p className="text-lg md:text-xl text-foreground/90 mb-6 max-w-2xl mx-auto leading-relaxed">
+                  <p className="text-lg md:text-xl text-gray-200 mb-6 max-w-2xl mx-auto leading-relaxed">
                     Participa de forma segura y transparente en las elecciones democráticas del Perú
                   </p>
                   
@@ -155,7 +155,7 @@ function App() {
                   viewport={{ once: true }}
                   className="bg-card/80 rounded-2xl p-8 md:p-12 border-2 border-primary/30 shadow-2xl"
                 >
-                  <h3 className="text-2xl md:text-3xl font-bold text-card-foreground mb-8 text-center">Cronograma General</h3>
+                  <h3 className="text-2xl md:text-3xl font-bold text-white mb-8 text-center">Cronograma General</h3>
                   
                   {/* Timeline */}
                   <div className="relative">
@@ -180,7 +180,7 @@ function App() {
                           </div>
                           <div className="bg-card/90 rounded-lg p-4 border border-primary/20 w-full">
                             <p className="text-primary font-bold text-sm md:text-base mb-1">{item.date}</p>
-                            <p className="text-card-foreground text-xs md:text-sm">{item.title}</p>
+                            <p className="text-white text-xs md:text-sm">{item.title}</p>
                           </div>
                         </motion.div>
                       ))}
@@ -194,7 +194,7 @@ function App() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                 >
-                  <h3 className="text-2xl md:text-3xl font-bold text-card-foreground mb-8 text-center">Etapas del Proceso</h3>
+                  <h3 className="text-2xl md:text-3xl font-bold text-white mb-8 text-center">Etapas del Proceso</h3>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[
                       { 
@@ -250,8 +250,8 @@ function App() {
                         <div className={`${stage.color} rounded-lg p-3 w-fit mb-4`}>
                           <stage.icon className="h-6 w-6 text-white" />
                         </div>
-                        <h4 className="text-card-foreground font-bold text-lg mb-2">{stage.title}</h4>
-                        <p className="text-muted-foreground text-sm leading-relaxed">{stage.description}</p>
+                        <h4 className="text-white font-bold text-lg mb-2">{stage.title}</h4>
+                        <p className="text-gray-300 text-sm leading-relaxed">{stage.description}</p>
                       </motion.div>
                     ))}
                   </div>
@@ -264,7 +264,7 @@ function App() {
                   viewport={{ once: true }}
                   className="bg-card/80 rounded-2xl p-8 md:p-12 border-2 border-primary/30 shadow-2xl"
                 >
-                  <h3 className="text-2xl md:text-3xl font-bold text-card-foreground mb-8 text-center">Tipos de Votación</h3>
+                  <h3 className="text-2xl md:text-3xl font-bold text-white mb-8 text-center">Tipos de Votación</h3>
                   <div className="grid md:grid-cols-3 gap-8">
                     {[
                       { 
@@ -298,8 +298,8 @@ function App() {
                         <div className={`${type.color} rounded-full p-6 mb-4 shadow-lg`}>
                           <type.icon className="h-8 w-8 text-white" />
                         </div>
-                        <h4 className="text-card-foreground font-bold text-lg mb-2">{type.title}</h4>
-                        <p className="text-muted-foreground text-sm leading-relaxed">{type.description}</p>
+                        <h4 className="text-white font-bold text-lg mb-2">{type.title}</h4>
+                        <p className="text-gray-300 text-sm leading-relaxed">{type.description}</p>
                       </motion.div>
                     ))}
                   </div>
@@ -312,7 +312,7 @@ function App() {
                   viewport={{ once: true }}
                   className="bg-card/80 rounded-2xl p-8 md:p-12 border-2 border-primary/30 shadow-2xl"
                 >
-                  <h3 className="text-2xl md:text-3xl font-bold text-card-foreground mb-8 text-center">Reglas y Requisitos Básicos</h3>
+                  <h3 className="text-2xl md:text-3xl font-bold text-white mb-8 text-center">Reglas y Requisitos Básicos</h3>
                   <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
                     {[
                       'Tener DNI vigente.',
@@ -329,7 +329,7 @@ function App() {
                         className="flex items-center space-x-3 bg-card/50 rounded-lg p-4 border border-primary/20"
                       >
                         <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0" />
-                        <p className="text-card-foreground text-sm md:text-base">{requirement}</p>
+                        <p className="text-white text-sm md:text-base">{requirement}</p>
                       </motion.div>
                     ))}
                   </div>
@@ -343,7 +343,7 @@ function App() {
                   initial={{ opacity: 0, x: -50 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  className="space-y-6 text-muted-foreground"
+                  className="space-y-6 text-gray-300"
                 >
                   <p className="text-lg leading-relaxed">
                     La confianza es la base de la democracia. Este sistema utiliza tecnología de punta para garantizar 
@@ -355,7 +355,7 @@ function App() {
                         <Lock className="h-6 w-6 text-primary" />
                       </div>
                       <div>
-                        <strong className="text-card-foreground text-lg block mb-1">Voto Encriptado</strong>
+                        <strong className="text-white text-lg block mb-1">Voto Encriptado</strong>
                         <span>Cada voto es cifrado de extremo a extremo, asegurando que solo pueda ser contado, no rastreado.</span>
                       </div>
                     </li>
@@ -409,11 +409,11 @@ function App() {
                     <CardHeader>
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <CardTitle className="text-card-foreground text-lg font-bold">Jornada Electoral Exitosa</CardTitle>
+                        <CardTitle className="text-white text-lg font-bold">Jornada Electoral Exitosa</CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground leading-relaxed">
+                      <p className="text-gray-300 leading-relaxed">
                         La ONPE reporta una participación histórica en el primer día de votación electrónica en todo el territorio peruano.
                       </p>
                     </CardContent>
@@ -430,11 +430,11 @@ function App() {
                     <CardHeader>
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <CardTitle className="text-card-foreground text-lg font-bold">Medidas de Seguridad</CardTitle>
+                        <CardTitle className="text-white text-lg font-bold">Medidas de Seguridad</CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground leading-relaxed">
+                      <p className="text-gray-300 leading-relaxed">
                         Expertos internacionales validan la robustez del sistema de votación implementado para garantizar la transparencia electoral.
                       </p>
                     </CardContent>
@@ -451,11 +451,11 @@ function App() {
                     <CardHeader>
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <CardTitle className="text-card-foreground text-lg font-bold">Cierre de Votaciones</CardTitle>
+                        <CardTitle className="text-white text-lg font-bold">Cierre de Votaciones</CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground leading-relaxed">
+                      <p className="text-gray-300 leading-relaxed">
                         Recuerde que el proceso finaliza el 6 de noviembre a las 17:00. ¡Ejercite su derecho al voto y participe en la democracia peruana!
                       </p>
                     </CardContent>

@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Search, ChevronRight } from 'lucide-react';
+import { MapPin, Search, ChevronRight, X, MousePointerClick } from 'lucide-react';
 
-// Colores refinados para el mapa
 const COLORS = { 
   base: '#1e293b', 
   hover: '#334155', 
@@ -39,17 +38,11 @@ const DEPARTMENTS_CONFIG = [
   { id: 'PE-TAC', name: 'Tacna', path: 'M315,500 L345,495 L340,530 L315,520 Z' }
 ];
 
-// --- TOOLTIP TRANSPARENTE Y COMPACTO ---
 const CardTooltip = ({ data, position, containerRect }) => {
   if (!data || !containerRect) return null;
-
-  // Ancho muy reducido
   const tooltipWidth = 150; 
-  
   let left = position.x + 15; 
-  let top = position.y - 50; // Más cerca del cursor para no tapar tanto
-
-  // Ajuste de bordes
+  let top = position.y - 50;
   if (left + tooltipWidth > containerRect.width) { left = position.x - tooltipWidth - 15; }
   if (left < 5) { left = 5; }
   if (top < 5) { top = position.y + 20; }
@@ -63,24 +56,18 @@ const CardTooltip = ({ data, position, containerRect }) => {
       className="absolute z-50 pointer-events-none"
       style={{ left, top }}
     >
-      {/* FONDO SEMI-TRANSPARENTE (glassmorphism) */}
       <div className="w-40 bg-slate-950/70 backdrop-blur-md border border-white/10 rounded-lg shadow-xl overflow-hidden">
         <div className="p-2.5">
-          {/* Header más pequeño */}
           <div className="flex items-center justify-between mb-1.5">
             <h2 className="text-xs font-bold text-white uppercase tracking-tight truncate max-w-[65%]">{data.name}</h2>
             <div className="px-1 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/30">
                <span className="text-[8px] font-bold text-emerald-400 leading-none block">VIVO</span>
             </div>
           </div>
-          
-          {/* Datos Compactos */}
           <div className="flex items-baseline justify-between mb-1.5">
             <span className="text-slate-300 text-[8px] font-bold uppercase tracking-wider">Participación</span>
             <span className="text-xl font-black text-yellow-400 tabular-nums">{data.value}%</span>
           </div>
-          
-          {/* Barra Fina */}
           <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
             <motion.div 
               className="h-full bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.8)]"
@@ -99,7 +86,7 @@ export default function PeruMap({ data = {}, onDepartmentHover, onDepartmentClic
   const [hoveredId, setHoveredId] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [searchTerm, setSearchTerm] = useState("");
-  const [isListOpen, setIsListOpen] = useState(window.innerWidth > 1024); // Lista abierta por defecto en PC
+  const [isListOpen, setIsListOpen] = useState(window.innerWidth > 1024);
   
   const containerRef = useRef(null);
   const [containerRect, setContainerRect] = useState(null);
@@ -135,16 +122,17 @@ export default function PeruMap({ data = {}, onDepartmentHover, onDepartmentClic
       onMouseLeave={() => setHoveredId(null)}
       onClick={handleBackgroundClick}
     >
-      {/* Título pequeño */}
-      <div className="absolute top-4 left-4 z-20 pointer-events-none hidden sm:block">
-        <div className="bg-slate-900/50 backdrop-blur-sm border border-white/10 px-3 py-1.5 rounded-lg">
-          <h3 className="text-xs font-bold text-slate-200 flex items-center gap-2">
-             <MapPin className="w-3 h-3 text-blue-400" /> Monitor Geográfico
-          </h3>
+      {/* Mensaje Central si no hay selección */}
+      {!selectedRegion && onDepartmentClick && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10 hidden sm:block animate-pulse">
+            <div className="bg-slate-900/60 text-slate-300 text-xs px-3 py-1 rounded-full border border-white/5 flex items-center gap-2 backdrop-blur-sm">
+                <MousePointerClick className="w-3 h-3" />
+                <span>Selecciona una región</span>
+            </div>
         </div>
-      </div>
+      )}
 
-      {/* Badge pequeño */}
+      {/* Badge de VIVO (Derecha) */}
       <div className="absolute top-4 right-4 z-20 pointer-events-none">
         <div className="bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-full flex items-center gap-1.5 backdrop-blur-sm">
           <span className="relative flex h-1.5 w-1.5">
@@ -155,31 +143,26 @@ export default function PeruMap({ data = {}, onDepartmentHover, onDepartmentClic
         </div>
       </div>
       
-      {/* Lista de Departamentos (Colapsable en móvil) */}
-      <div className="absolute bottom-4 left-4 z-30 flex flex-col gap-2 pointer-events-auto items-start">
-        <button 
-          onClick={(e) => { e.stopPropagation(); setIsListOpen(!isListOpen); }}
-          className="flex items-center gap-2 bg-slate-900/80 backdrop-blur-md border border-slate-700/50 text-white text-[10px] font-bold px-3 py-2 rounded-lg shadow-lg hover:bg-slate-800 transition-all lg:hidden"
-        >
-          <Search className="w-3 h-3" />
-          {isListOpen ? "Cerrar" : "Regiones"}
-        </button>
-
+      {/* BUSCADOR Y LISTA FLOTANTE (Esquina Inferior Izquierda) */}
+      <div className="absolute bottom-4 left-4 z-30 flex flex-col gap-2 pointer-events-auto items-start max-w-[200px]">
         <AnimatePresence>
           {(isListOpen) && (
             <motion.div 
               initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.95 }} transition={{ duration: 0.2 }}
-              className="w-48 bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-lg overflow-hidden shadow-xl flex flex-col"
+              className="w-full bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-lg overflow-hidden shadow-2xl flex flex-col max-h-[220px] mb-2"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-2 py-2 border-b border-slate-700/50 bg-slate-900/50">
-                <input 
-                  type="text" placeholder="Buscar..." 
-                  className="w-full bg-slate-800/50 border border-slate-700/50 rounded px-2 py-1 text-[10px] text-white focus:outline-none focus:border-blue-500/50 transition-colors" 
-                  onChange={(e) => setSearchTerm(e.target.value)} value={searchTerm} 
-                />
+              <div className="px-2 py-2 border-b border-slate-700/50 bg-slate-950/50">
+                <div className="relative">
+                    <Search className="w-3 h-3 text-slate-500 absolute left-2 top-2" />
+                    <input 
+                    type="text" placeholder="Buscar región..." 
+                    className="w-full bg-slate-800/50 border border-slate-700/50 rounded px-2 py-1.5 pl-7 text-[10px] text-white focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-slate-600" 
+                    onChange={(e) => setSearchTerm(e.target.value)} value={searchTerm} 
+                    />
+                </div>
               </div>
-              <div className="max-h-[150px] overflow-y-auto custom-scrollbar p-1 space-y-0.5">
+              <div className="overflow-y-auto custom-scrollbar p-1 space-y-0.5 flex-1">
                 {filteredDepts.map(dept => (
                   <button 
                     key={dept.id} 
@@ -200,12 +183,21 @@ export default function PeruMap({ data = {}, onDepartmentHover, onDepartmentClic
             </motion.div>
           )}
         </AnimatePresence>
+
+        <button 
+          onClick={(e) => { e.stopPropagation(); setIsListOpen(!isListOpen); }}
+          className="flex items-center gap-2 bg-slate-900/80 backdrop-blur-md border border-slate-700/50 text-white text-[10px] font-bold px-3 py-2 rounded-lg shadow-lg hover:bg-slate-800 transition-all lg:hidden"
+        >
+          {isListOpen ? <X className="w-3 h-3 text-red-400"/> : <Search className="w-3 h-3" />}
+          {isListOpen ? "Cerrar" : "Buscar Región"}
+        </button>
       </div>
 
       <AnimatePresence>{activeData && <CardTooltip data={activeData} position={tooltipPos} containerRect={containerRect} />}</AnimatePresence>
 
+      {/* SVG DEL MAPA */}
       <div className="w-full h-full flex items-center justify-center p-2 sm:p-6 z-0">
-        <motion.svg viewBox="0 0 500 600" className="w-full h-full max-h-[85vh] filter drop-shadow-[0_0_25px_rgba(0,0,0,0.6)]" preserveAspectRatio="xMidYMid meet">
+        <motion.svg viewBox="0 0 500 600" className="w-full h-full max-h-[90vh] filter drop-shadow-[0_0_25px_rgba(0,0,0,0.6)]" preserveAspectRatio="xMidYMid meet">
           <g transform="translate(10, 10)">
             {departments.map((dept) => {
               const isActive = hoveredId === dept.id || selectedRegion === dept.name;

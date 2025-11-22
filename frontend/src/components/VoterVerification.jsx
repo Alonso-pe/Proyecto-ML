@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, MapPin, CheckCircle, XCircle, Loader2, ArrowRight, Shield, X } from 'lucide-react';
+import { User, MapPin, CheckCircle, XCircle, Loader2, ArrowRight, Shield, X, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/ui/card.jsx';
 import { Button } from '@/ui/button.jsx';
 import { Input } from '@/ui/input.jsx';
@@ -8,19 +8,10 @@ import { useVoterData } from '@/hooks/useVoterData';
 import { useToast } from '@/ui/use-toast';
 
 const ROLE_OPTIONS = [
-  {
-    id: 'administrador',
-    label: 'Administrador',
-    icon: Shield,
-  },
-  {
-    id: 'usuario',
-    label: 'Usuario',
-    icon: User,
-  },
+  { id: 'administrador', label: 'Administrador', icon: Shield },
+  { id: 'usuario', label: 'Usuario', icon: User },
 ];
 
-// --- 1. PRIMER CAMBIO: Acepta la prop 'onVerificationSuccess' y 'mode' ---
 const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) => {
   const { 
     dni, 
@@ -32,15 +23,25 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
     validateDni 
   } = useVoterData();
 
-  // Estado de admin global
-  const [globalAdminState, setGlobalAdminState] = useState(localStorage.getItem('isAdmin') === 'true');
   const { toast } = useToast();
-  // Si mode es 'admin', forzar selectedRole a 'administrador', si es 'user' a 'usuario'
   const [selectedRole, setSelectedRole] = useState(mode === 'admin' ? 'administrador' : 'usuario');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [adminError, setAdminError] = useState('');
   const [isAdminLoading, setIsAdminLoading] = useState(false);
+  const [alreadyVotedComplete, setAlreadyVotedComplete] = useState(false);
+
+  useEffect(() => {
+    if (dni && dni.length === 8) {
+      const votedSectionsData = JSON.parse(localStorage.getItem('votedSectionsByDni') || '{}');
+      const myVotes = votedSectionsData[dni];
+      if (myVotes && myVotes.presidencial && myVotes.regionales) {
+        setAlreadyVotedComplete(true);
+      } else {
+        setAlreadyVotedComplete(false);
+      }
+    }
+  }, [dni]);
 
   const resetAdminState = () => {
     setAdminEmail('');
@@ -50,53 +51,37 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
   };
 
   const handleRoleChange = (roleId) => {
-    // Solo permitir cambio de rol si no hay un mode específico
     if (!mode || mode === 'both') {
       setSelectedRole(roleId);
-      if (roleId === 'usuario') {
-        resetAdminState();
-      }
+      if (roleId === 'usuario') resetAdminState();
     }
   };
 
-  // Verificar si el usuario ya votó
-  const hasVoted = () => {
-    if (selectedRole === 'usuario' && dni) {
-      const votedDnis = JSON.parse(localStorage.getItem('votedDnis') || '[]');
-      return votedDnis.includes(dni);
-    }
-    return false;
-  };
-
-  // --- 2. SEGUNDO CAMBIO: Llama a la función 'onVerificationSuccess' ---
   const handleContinue = () => {
     if (selectedRole === 'usuario') {
-      // Verificar si ya votó
-      if (hasVoted()) {
-        toast({
-          variant: "destructive",
-          title: '❌ Ya has votado',
-          description: 'Este DNI ya ha emitido su voto. No se permite votar nuevamente.',
-        });
-        return;
-      }
-      
-      // Guardar el DNI verificado en localStorage
       localStorage.setItem('verifiedDni', dni);
       
-      // Guardar información del votante para usar después
       const voterInfo = JSON.parse(localStorage.getItem('voterInfo') || '{}');
-      voterInfo[dni] = {
-        name: voterData.name,
-        district: voterData.district
-      };
-      localStorage.setItem('voterInfo', JSON.stringify(voterInfo));
+      if (!voterInfo[dni] && voterData) {
+        voterInfo[dni] = {
+          name: voterData.name,
+          district: voterData.district
+        };
+        localStorage.setItem('voterInfo', JSON.stringify(voterInfo));
+      }
       
-      toast({
-        title: '🚧 Votación en Proceso',
-        description: 'Serás redirigido al módulo de votación. ¡Gracias por participar! 🚀',
-      });
-      onVerificationSuccess(); // Solo para usuarios normales
+      if (alreadyVotedComplete) {
+         toast({
+          title: 'ℹ️ Consulta de Estado',
+          description: 'Accediendo a la plataforma para verificar sus votos emitidos.',
+        });
+      } else {
+        toast({
+          title: '🚧 Votación en Proceso',
+          description: 'Serás redirigido al módulo de votación. ¡Gracias por participar! 🚀',
+        });
+      }
+      onVerificationSuccess(); 
     }
   };
 
@@ -105,32 +90,34 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="w-full max-w-md mx-auto relative"
+      className="w-full max-w-md mx-auto relative px-4 sm:px-0"
     >
-      <Card className="bg-card/70 border-white/20 shadow-2xl rounded-2xl overflow-hidden backdrop-blur-lg">
-        {/* Botón para cerrar (solo si hay modo específico) */}
+      <Card className="bg-[#0f172a]/95 border-white/10 shadow-2xl rounded-2xl overflow-hidden backdrop-blur-xl">
         {mode && mode !== 'both' && onClose && (
           <Button
             variant="ghost"
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 text-gray-400 hover:text-white hover:bg-white/10 rounded-full"
+            className="absolute top-4 right-4 z-10 text-gray-400 hover:text-white hover:bg-white/10 rounded-full h-8 w-8 p-0"
           >
             <X className="h-5 w-5" />
           </Button>
         )}
-        <CardHeader className="text-center p-8">
-          <CardTitle className="text-3xl font-bold text-white">Verifique su Identidad</CardTitle>
-          <CardDescription className="text-gray-300 mt-2">
+        
+        <CardHeader className="text-center pt-10 pb-6 px-6">
+          <CardTitle className="text-3xl font-extrabold text-white tracking-tight">Verifique su Identidad</CardTitle>
+          <CardDescription className="text-slate-400 mt-2 text-base">
             {selectedRole === 'administrador'
-              ? 'Ingrese su correo institucional y contraseña para continuar.'
+              ? 'Acceso restringido al personal autorizado.'
               : 'Ingrese su número de DNI para continuar.'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-8 pt-0 space-y-6">
-          {/* Solo mostrar selector de rol si no hay un mode específico */}
+        
+        <CardContent className="px-6 pb-8 space-y-6">
+          
+          {/* BADGE DE ROL */}
           {!mode || mode === 'both' ? (
-            <div className="flex flex-col items-center space-y-3">
-              <div className="flex items-center gap-3 bg-black/30 border border-white/10 rounded-full p-2">
+            <div className="flex justify-center">
+              <div className="flex items-center gap-1 bg-slate-900/50 border border-white/10 rounded-full p-1">
                 {ROLE_OPTIONS.map((role) => {
                   const Icon = role.icon;
                   const isSelected = selectedRole === role.id;
@@ -140,40 +127,38 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
                       type="button"
                       variant="ghost"
                       onClick={() => handleRoleChange(role.id)}
-                      className={`flex items-center gap-2 px-6 py-3 text-base md:text-lg font-semibold rounded-full transition-all duration-200 border 
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200
                         ${isSelected 
-                          ? 'bg-primary text-white border-primary shadow-lg scale-105' 
-                          : 'border-transparent text-gray-300 hover:text-white hover:bg-white/10'
+                          ? 'bg-primary text-primary-foreground shadow-md font-bold' 
+                          : 'text-slate-400 hover:text-white hover:bg-white/5 font-medium'
                         }`}
                     >
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-4 w-4" />
                       {role.label}
                     </Button>
                   );
                 })}
               </div>
-              <p className="text-sm text-gray-400 uppercase tracking-wide">
-                Perfil seleccionado: <span className="text-white font-semibold">{selectedRole === 'administrador' ? 'Administrador' : 'Usuario'}</span>
-              </p>
             </div>
           ) : (
-            <div className="flex flex-col items-center space-y-3">
-              <div className="flex items-center gap-2 bg-primary/20 border border-primary/30 rounded-full px-6 py-3">
+            <div className="flex justify-center">
+              <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-full px-5 py-2">
                 {mode === 'admin' ? (
                   <>
-                    <Shield className="h-5 w-5 text-primary" />
-                    <span className="text-white font-semibold">Acceso de Administrador</span>
+                    <Shield className="h-4 w-4 text-amber-500" />
+                    <span className="text-amber-500 font-bold text-sm uppercase tracking-wide">Administrador</span>
                   </>
                 ) : (
                   <>
-                    <User className="h-5 w-5 text-primary" />
-                    <span className="text-white font-semibold">Verificación de Usuario</span>
+                    <User className="h-4 w-4 text-amber-500" />
+                    <span className="text-amber-500 font-bold text-sm uppercase tracking-wide">Usuario Votante</span>
                   </>
                 )}
               </div>
             </div>
           )}
 
+          {/* FORMULARIO ADMIN */}
           {selectedRole === 'administrador' ? (
             <div className="space-y-4">
               <Input
@@ -181,167 +166,180 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
                 value={adminEmail}
                 onChange={(e) => setAdminEmail(e.target.value)}
                 placeholder="Correo institucional"
-                className="h-14 text-lg bg-black/30 border-2 border-white/30 focus:border-primary focus:ring-primary"
+                className="h-14 text-base bg-slate-950/50 border-slate-700 focus:border-primary focus:ring-primary/20 text-white placeholder:text-slate-500 rounded-xl"
               />
               <Input
                 type="password"
                 value={adminPassword}
                 onChange={(e) => setAdminPassword(e.target.value)}
                 placeholder="Contraseña"
-                className="h-14 text-lg bg-black/30 border-2 border-white/30 focus:border-primary focus:ring-primary"
+                className="h-14 text-base bg-slate-950/50 border-slate-700 focus:border-primary focus:ring-primary/20 text-white placeholder:text-slate-500 rounded-xl"
               />
               {adminError && (
-                <p className="text-center text-sm text-red-400">{adminError}</p>
+                <p className="text-center text-sm text-red-400 font-medium bg-red-500/10 py-2 rounded-lg">{adminError}</p>
               )}
               <Button
                 onClick={async () => {
                   setAdminError('');
-                  if (!adminEmail || !adminEmail.includes('@')) {
-                    setAdminError('Ingrese un correo institucional válido.');
-                    return;
-                  }
-                  if (!adminPassword || adminPassword.length < 6) {
-                    setAdminError('La contraseña debe tener al menos 6 caracteres.');
-                    return;
-                  }
+                  if (!adminEmail || !adminEmail.includes('@')) { setAdminError('Correo inválido.'); return; }
+                  if (!adminPassword || adminPassword.length < 6) { setAdminError('Contraseña corta.'); return; }
 
                   try {
                     setIsAdminLoading(true);
-                    
-                    // Verificar credenciales de administrador
                     if (adminEmail === 'admin@onpe.gob.pe' && adminPassword === 'admin123') {
-                      toast({
-                        title: '✅ Acceso correcto',
-                        description: 'Redirigiendo al panel de administración...',
-                      });
-                      
-                      // Habilitar acceso admin
+                      toast({ title: '✅ Acceso Autorizado', description: 'Iniciando sesión segura...' });
                       localStorage.setItem('isAdmin', 'true');
-                      // Si hay callback, llamarlo, sino recargar
                       if (onVerificationSuccess) {
-                        setTimeout(() => {
-                          onVerificationSuccess();
-                        }, 1000);
+                        setTimeout(() => onVerificationSuccess(), 800);
                       } else {
                         window.location.reload();
                       }
                     } else {
-                      setAdminError('Credenciales inválidas. Pruebe con admin@onpe.gob.pe / admin123');
-                      toast({
-                        variant: "destructive",
-                        title: "❌ Error de acceso",
-                        description: "Credenciales incorrectas. Intente nuevamente.",
-                      });
+                      setAdminError('Credenciales no válidas.');
+                      toast({ variant: "destructive", title: "Acceso Denegado", description: "Verifique sus credenciales." });
                     }
-
                   } finally {
                     setIsAdminLoading(false);
                   }
                 }}
                 disabled={isAdminLoading}
-                className="w-full h-12 text-lg font-semibold bg-primary hover:bg-primary/90"
+                className="w-full h-14 text-lg font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all rounded-xl"
               >
-                {isAdminLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Ingresar'}
+                {isAdminLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Iniciar Sesión'}
               </Button>
             </div>
           ) : (
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Ingrese su DNI (8 dígitos)"
-                value={dni}
-                onChange={handleDniChange}
-                maxLength="8"
-                className={`h-14 text-lg pr-28 text-center bg-black/30 border-2 ${!isValidDni && dni.length > 0 ? 'border-red-500' : 'border-white/30'} focus:border-primary focus:ring-primary`}
-              />
+            /* FORMULARIO USUARIO - ESTILO PROFESIONAL DE LA IMAGEN */
+            <div className="flex flex-col gap-4">
+              {/* Input DNI Estilizado */}
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none z-10">
+                  <span className="text-slate-500 font-bold text-xs uppercase tracking-wider">DNI</span>
+                </div>
+                <Input
+                  type="text"
+                  placeholder="" // Placeholder vacío para usar la máscara visual
+                  value={dni}
+                  onChange={handleDniChange}
+                  maxLength="8"
+                  className={`h-16 text-3xl text-center font-mono tracking-[0.15em] bg-slate-950/60 border-2 transition-all 
+                    ${!isValidDni && dni.length > 0 ? 'border-red-500 focus:border-red-500' : 'border-slate-700 focus:border-primary/50'} 
+                    text-white rounded-xl shadow-inner focus:bg-slate-900`}
+                />
+                 {/* Placeholder simulado si está vacío */}
+                 {dni.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <span className="text-slate-600 text-2xl tracking-widest opacity-50">********</span>
+                    </div>
+                 )}
+              </div>
+
+              {/* Botón Verificar */}
               <Button 
                 onClick={validateDni}
                 disabled={isLoading || dni.length !== 8}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-11 px-4 bg-primary hover:bg-primary/90 disabled:bg-gray-500"
+                className="h-14 w-full text-lg font-bold bg-slate-700 hover:bg-slate-600 text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-xl shadow-lg border border-slate-600/50"
               >
-                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Verificar'}
+                {isLoading ? (
+                  <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Verificando...</>
+                ) : (
+                  'Verificar'
+                )}
               </Button>
             </div>
           )}
           
+          {/* RESULTADO DE VERIFICACIÓN */}
           {selectedRole === 'usuario' && (
             <AnimatePresence>
+              {/* Mensaje de error DNI */}
               {!isValidDni && dni.length > 0 && (
-                <motion.p
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="text-red-400 text-sm text-center"
-                >
-                  El DNI debe contener 8 dígitos.
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-red-400 text-sm text-center font-medium">
+                  El DNI debe tener exactamente 8 dígitos.
                 </motion.p>
               )}
+              
+              {/* Mensaje de error API */}
               {error && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="flex items-center justify-center space-x-2 text-red-400"
-                >
-                  <XCircle className="h-5 w-5" />
-                  <p>{error}</p>
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg flex items-center gap-3 text-red-400 justify-center">
+                  <XCircle className="h-5 w-5 flex-shrink-0" />
+                  <p className="text-sm font-medium">{error}</p>
                 </motion.div>
               )}
+
+              {/* TARJETA DE RESULTADO */}
               {voterData && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  transition={{ duration: 0.5, ease: 'easeInOut' }}
-                  className="bg-black/20 p-6 rounded-lg border border-white/10 space-y-4"
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  className="bg-[#1e293b]/80 p-5 rounded-xl border border-slate-700 shadow-xl space-y-5 mt-2"
                 >
-                  {hasVoted() ? (
-                    <div className="text-center space-y-4">
-                      <XCircle className="h-16 w-16 text-red-400 mx-auto" />
-                      <div>
-                        <h3 className="text-xl font-bold text-red-400 mb-2">Ya has votado</h3>
-                        <p className="text-gray-300">
-                          Este DNI ({dni}) ya ha emitido su voto en esta elección.
-                        </p>
-                        <p className="text-gray-400 text-sm mt-2">
-                          Por seguridad electoral, no se permite votar nuevamente.
-                        </p>
+                  {alreadyVotedComplete ? (
+                    <div className="text-center py-2">
+                      <div className="mx-auto w-14 h-14 bg-blue-500/20 rounded-full flex items-center justify-center mb-3 border border-blue-500/30">
+                        <CheckCircle className="h-7 w-7 text-blue-400" />
                       </div>
+                      <h3 className="text-xl font-bold text-white">Votación Registrada</h3>
+                      <p className="text-slate-400 text-sm mt-1 px-4">
+                        Este DNI ya ha completado su participación en el proceso electoral.
+                      </p>
                     </div>
                   ) : (
-                    <>
-                      <div className="flex items-center space-x-3">
-                        <User className="h-5 w-5 text-gray-300" />
-                        <span className="text-white">{voterData.name}</span>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-slate-800 rounded-lg shrink-0 border border-slate-700 text-amber-400">
+                          <User className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Votante</p>
+                          <p className="text-white font-bold text-lg leading-tight">{voterData.name}</p>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <MapPin className="h-5 w-5 text-gray-300" />
-                        <span className="text-white">{voterData.district}</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        {voterData.status === 'Habilitado para votar' ? 
-                          <CheckCircle className="h-5 w-5 text-green-400" /> : 
-                          <XCircle className="h-5 w-5 text-yellow-400" />}
-                        <span className={`font-semibold ${voterData.status === 'Habilitado para votar' ? 'text-green-400' : 'text-yellow-400'}`}>
-                          {voterData.status}
-                        </span>
+                      
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-slate-800 rounded-lg shrink-0 border border-slate-700 text-amber-400">
+                          <MapPin className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Ubicación</p>
+                          <p className="text-white font-medium">{voterData.district}</p>
+                        </div>
                       </div>
 
-                      {voterData.status === 'Habilitado para votar' && (
-                        // Este botón ahora llama a 'handleContinue', que está modificado
-                        <Button onClick={handleContinue} className="w-full mt-4 h-12 text-lg font-bold bg-green-600 hover:bg-green-700">
-                          Ingresar al proceso de votación <ArrowRight className="ml-2 h-5 w-5"/>
-                        </Button>
-                      )}
-                    </>
+                      <div className="h-px bg-slate-700/50" />
+                      
+                      <div className="flex items-center gap-2 text-emerald-400 bg-emerald-400/10 px-3 py-2 rounded-lg border border-emerald-400/20">
+                         <CheckCircle className="h-5 w-5" />
+                         <span className="font-bold text-sm">Habilitado para votar</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Botón de Acción Principal */}
+                  {voterData.status === 'Habilitado para votar' && (
+                    <Button 
+                        onClick={handleContinue} 
+                        className={`w-full h-14 text-lg font-bold shadow-lg transition-transform active:scale-[0.98] rounded-xl
+                          ${alreadyVotedComplete 
+                            ? 'bg-slate-600 hover:bg-slate-500 text-white shadow-slate-900/20' 
+                            : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20'}`
+                        }
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        {alreadyVotedComplete ? 'Ver Estado' : 'Continuar'} 
+                        {alreadyVotedComplete ? <Eye className="h-5 w-5"/> : <ArrowRight className="h-5 w-5"/>}
+                      </span>
+                    </Button>
                   )}
                 </motion.div>
               )}
             </AnimatePresence>
           )}
           
-          <div className="text-center text-xs text-gray-400 pt-4 flex items-center justify-center space-x-2">
-            <Shield className="h-4 w-4" />
-            <span>Sus datos están protegidos bajo los estándares del Estado Peruano.</span>
+          <div className="text-center flex items-center justify-center gap-2 opacity-40 hover:opacity-80 transition-opacity mt-4">
+            <Shield className="h-3 w-3 text-slate-300" />
+            <span className="text-[10px] text-slate-300 uppercase tracking-widest font-bold">Seguridad ONPE</span>
           </div>
         </CardContent>
       </Card>

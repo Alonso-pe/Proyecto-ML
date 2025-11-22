@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { 
-  LayoutGrid, Database, Trash2, FileText, LogOut, 
-  Bell, BarChartHorizontal, Settings, BookDown, Menu, 
-  ShieldCheck, Search, User, Power, ChevronLeft, ChevronRight, X
+  LayoutGrid, Database, Trash2, LogOut, 
+  BookDown, Menu, ShieldCheck, User, 
+  Power, ChevronLeft, ChevronRight, X, Settings,
+  BarChartHorizontal
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/ui/button';
@@ -11,11 +12,9 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/ui/dropdown-menu';
 
-// Importación de páginas
 import Dashboard from './pages/Dashboard';
 import DataUpload from './pages/DataUpload';
 import Cleaning from './pages/Cleaning';
-import VotesReal from './pages/VotesReal';
 import ElectionResults from './pages/ElectionResults';
 import Reportes from './pages/Reportes';
 
@@ -23,24 +22,21 @@ const NAV_ITEMS = [
   { id: 'dashboard', label: 'Panel de Control', icon: LayoutGrid },
   { id: 'upload', label: 'Ingesta de Datos', icon: Database },
   { id: 'cleaning', label: 'Calidad de Datos', icon: Trash2 },
-  { id: 'votes', label: 'Monitor en Vivo', icon: FileText },
-  { id: 'elections', label: 'Resultados Finales', icon: BarChartHorizontal },
+  { id: 'results', label: 'Resultados Finales', icon: BarChartHorizontal },
   { id: 'reportes', label: 'Reportes & Logs', icon: BookDown },
 ];
 
-// --- COMPONENTE SIDEBAR (Barra Lateral) ---
 function Sidebar({ active, setActive, mobileOpen, setMobileOpen, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
 
-  // Al hacer clic en un link en móvil, cerramos el menú
   const handleNavClick = (id) => {
     setActive(id);
-    setMobileOpen(false);
+    setMobileOpen(false); // Cerrar menú al hacer clic en móvil
   };
 
   return (
     <>
-      {/* 1. OVERLAY OSCURO (Solo Móvil) */}
+      {/* Overlay oscuro para móvil */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div 
@@ -53,7 +49,6 @@ function Sidebar({ active, setActive, mobileOpen, setMobileOpen, onLogout }) {
         )}
       </AnimatePresence>
       
-      {/* 2. SIDEBAR (Móvil y Desktop unificado) */}
       <aside 
         className={`
           fixed top-0 left-0 z-[150] h-full bg-[#0b1121] border-r border-slate-800 flex flex-col
@@ -64,20 +59,18 @@ function Sidebar({ active, setActive, mobileOpen, setMobileOpen, onLogout }) {
           w-72
         `}
       >
-        {/* Header del Sidebar */}
         <div className="h-16 lg:h-20 flex items-center justify-between px-5 border-b border-slate-800 bg-[#0f172a] shrink-0">
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="relative flex-shrink-0 flex items-center justify-center w-10 h-10 bg-blue-600 rounded-xl shadow-lg border border-white/10">
               <ShieldCheck className="w-6 h-6 text-white" />
             </div>
-            {/* Texto: Visible en móvil, y en desktop si no está colapsado */}
             <div className={`whitespace-nowrap overflow-hidden transition-opacity duration-200 ${collapsed ? 'lg:opacity-0 lg:w-0' : 'opacity-100'}`}>
               <h2 className="text-sm font-extrabold text-white tracking-tight leading-none uppercase">SISTEMA ELECTORAL</h2>
               <p className="text-[10px] text-blue-400 uppercase tracking-widest font-bold mt-1">Acceso Admin</p>
             </div>
           </div>
           
-          {/* BOTÓN CERRAR (Solo Móvil) */}
+          {/* Botón cerrar solo en móvil */}
           <button 
             onClick={() => setMobileOpen(false)} 
             className="lg:hidden p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
@@ -86,7 +79,6 @@ function Sidebar({ active, setActive, mobileOpen, setMobileOpen, onLogout }) {
           </button>
         </div>
         
-        {/* Lista de Navegación */}
         <div className="flex-1 overflow-y-auto py-6 px-3 space-y-1 custom-scrollbar">
           <p className={`px-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 transition-opacity ${collapsed ? 'lg:opacity-0' : 'opacity-100'}`}>
             Módulos
@@ -118,7 +110,6 @@ function Sidebar({ active, setActive, mobileOpen, setMobileOpen, onLogout }) {
                 )}
                 <Icon className={`h-5 w-5 transition-colors ${isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
                 
-                {/* Texto del botón */}
                 <span className={`whitespace-nowrap transition-all duration-200 ${collapsed ? 'lg:w-0 lg:opacity-0 lg:overflow-hidden' : 'w-auto opacity-100'}`}>
                   {item.label}
                 </span>
@@ -126,7 +117,7 @@ function Sidebar({ active, setActive, mobileOpen, setMobileOpen, onLogout }) {
             );
           })}
 
-          {/* Botón Colapsar (Solo Desktop) */}
+          {/* Botón colapsar solo en escritorio */}
           <div className="mt-4 hidden lg:block">
              <button 
                 onClick={() => setCollapsed(!collapsed)} 
@@ -137,7 +128,6 @@ function Sidebar({ active, setActive, mobileOpen, setMobileOpen, onLogout }) {
           </div>
         </div>
 
-        {/* Footer Perfil */}
         <div className="p-4 border-t border-slate-800 bg-[#0a0f1e] shrink-0">
           <div className={`flex items-center transition-all p-2 rounded-lg hover:bg-slate-800/50 cursor-pointer group border border-transparent hover:border-slate-700 ${collapsed ? 'justify-center' : 'gap-3'}`}>
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex-shrink-0 flex items-center justify-center text-xs font-bold text-white ring-2 ring-slate-900">
@@ -159,12 +149,11 @@ function Sidebar({ active, setActive, mobileOpen, setMobileOpen, onLogout }) {
   );
 }
 
-// --- COMPONENTE HEADER ---
 function AdminHeader({ title, onMenuClick, onLogout }) {
   return (
     <header className="h-16 lg:h-20 bg-[#0b1121]/90 backdrop-blur-xl border-b border-slate-800 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-40 transition-all duration-300 shrink-0">
       <div className="flex items-center gap-3 lg:gap-4">
-        {/* BOTÓN HAMBURGUESA (Solo Móvil) */}
+        {/* Botón Hamburguesa visible solo en móvil (lg:hidden) */}
         <Button 
           variant="ghost" 
           size="icon" 
@@ -190,25 +179,9 @@ function AdminHeader({ title, onMenuClick, onLogout }) {
       </div>
 
       <div className="flex items-center gap-2 lg:gap-6">
-        <div className="hidden md:flex items-center bg-slate-900 border border-slate-700/50 rounded-full px-4 py-2 w-64 focus-within:border-blue-500/50 focus-within:bg-slate-800 transition-all shadow-inner">
-          <Search className="h-4 w-4 text-slate-500 mr-2" />
-          <input 
-            type="text" 
-            placeholder="Buscar acta..." 
-            className="bg-transparent border-none focus:outline-none text-sm text-white placeholder:text-slate-600 w-full"
-          />
-        </div>
-
-        <div className="h-6 w-px bg-slate-800 mx-1 hidden md:block" />
-
         <div className="flex items-center gap-1 lg:gap-2">
           <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors hidden sm:flex" onClick={onLogout} title="Salir">
             <Power className="h-5 w-5" />
-          </Button>
-
-          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-800 relative rounded-full">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-[#0f172a] animate-pulse" />
           </Button>
 
           <DropdownMenu>
@@ -235,7 +208,6 @@ function AdminHeader({ title, onMenuClick, onLogout }) {
   );
 }
 
-// --- LAYOUT PRINCIPAL ---
 export default function AdminLayout({ onLogout }) {
   const [active, setActive] = useState('dashboard');
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -245,8 +217,7 @@ export default function AdminLayout({ onLogout }) {
       case 'dashboard': return <Dashboard />;
       case 'upload': return <DataUpload onNext={() => setActive('cleaning')} />;
       case 'cleaning': return <Cleaning />;
-      case 'votes': return <VotesReal />;
-      case 'elections': return <ElectionResults />;
+      case 'results': return <ElectionResults />;
       case 'reportes': return <Reportes />;
       default: return <Dashboard />;
     }

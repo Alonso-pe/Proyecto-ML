@@ -35,7 +35,8 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
     if (dni && dni.length === 8) {
       const votedSectionsData = JSON.parse(localStorage.getItem('votedSectionsByDni') || '{}');
       const myVotes = votedSectionsData[dni];
-      if (myVotes && myVotes.presidencial && myVotes.regionales) {
+      // Verifica 'alcaldia' o el viejo 'regionales'
+      if (myVotes && myVotes.presidencial && (myVotes.alcaldia || myVotes.regionales)) {
         setAlreadyVotedComplete(true);
       } else {
         setAlreadyVotedComplete(false);
@@ -114,7 +115,6 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
         
         <CardContent className="px-6 pb-8 space-y-6">
           
-          {/* BADGE DE ROL */}
           {!mode || mode === 'both' ? (
             <div className="flex justify-center">
               <div className="flex items-center gap-1 bg-slate-900/50 border border-white/10 rounded-full p-1">
@@ -158,7 +158,6 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
             </div>
           )}
 
-          {/* FORMULARIO ADMIN */}
           {selectedRole === 'administrador' ? (
             <div className="space-y-4">
               <Input
@@ -209,16 +208,14 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
               </Button>
             </div>
           ) : (
-            /* FORMULARIO USUARIO - ESTILO PROFESIONAL DE LA IMAGEN */
             <div className="flex flex-col gap-4">
-              {/* Input DNI Estilizado */}
               <div className="relative group">
                 <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none z-10">
                   <span className="text-slate-500 font-bold text-xs uppercase tracking-wider">DNI</span>
                 </div>
                 <Input
                   type="text"
-                  placeholder="" // Placeholder vacío para usar la máscara visual
+                  placeholder=""
                   value={dni}
                   onChange={handleDniChange}
                   maxLength="8"
@@ -226,7 +223,6 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
                     ${!isValidDni && dni.length > 0 ? 'border-red-500 focus:border-red-500' : 'border-slate-700 focus:border-primary/50'} 
                     text-white rounded-xl shadow-inner focus:bg-slate-900`}
                 />
-                 {/* Placeholder simulado si está vacío */}
                  {dni.length === 0 && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <span className="text-slate-600 text-2xl tracking-widest opacity-50">********</span>
@@ -234,7 +230,6 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
                  )}
               </div>
 
-              {/* Botón Verificar */}
               <Button 
                 onClick={validateDni}
                 disabled={isLoading || dni.length !== 8}
@@ -249,17 +244,14 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
             </div>
           )}
           
-          {/* RESULTADO DE VERIFICACIÓN */}
           {selectedRole === 'usuario' && (
             <AnimatePresence>
-              {/* Mensaje de error DNI */}
               {!isValidDni && dni.length > 0 && (
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-red-400 text-sm text-center font-medium">
                   El DNI debe tener exactamente 8 dígitos.
                 </motion.p>
               )}
               
-              {/* Mensaje de error API */}
               {error && (
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg flex items-center gap-3 text-red-400 justify-center">
                   <XCircle className="h-5 w-5 flex-shrink-0" />
@@ -267,7 +259,6 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
                 </motion.div>
               )}
 
-              {/* TARJETA DE RESULTADO */}
               {voterData && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -307,7 +298,7 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
                         </div>
                       </div>
 
-                      <div className="h-px bg-slate-700/50" />
+                      <div className="h-px bg-slate-700/50 my-2" />
                       
                       <div className="flex items-center gap-2 text-emerald-400 bg-emerald-400/10 px-3 py-2 rounded-lg border border-emerald-400/20">
                          <CheckCircle className="h-5 w-5" />
@@ -316,7 +307,6 @@ const VoterVerification = ({ onVerificationSuccess, mode = 'user', onClose }) =>
                     </div>
                   )}
 
-                  {/* Botón de Acción Principal */}
                   {voterData.status === 'Habilitado para votar' && (
                     <Button 
                         onClick={handleContinue} 

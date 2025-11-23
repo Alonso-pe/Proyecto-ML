@@ -11,7 +11,7 @@ export default function DataUpload({ onNext }) {
 
   const handleFiles = (parsed) => {
     localStorage.setItem('presidenciales_raw', JSON.stringify(parsed));
-    localStorage.setItem('congresales_raw', JSON.stringify(parsed));
+    // CAMBIO: 'municipales_raw'
     localStorage.setItem('municipales_raw', JSON.stringify(parsed));
     
     setPreviewData(parsed);

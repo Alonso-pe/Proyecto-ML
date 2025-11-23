@@ -132,10 +132,86 @@ export default function Dashboard() {
     }
   };
 
-  const presVotes = useMemo(() => getPresidentialVotes(), []);
+  const [presVotes, setPresVotes] = useState(() => getPresidentialVotes());
+
+  // Try to fetch real summary from backend; fall back to local mock on error.
+  useEffect(() => {
+    let mounted = true;
+
+    const updateFromPayload = (data) => {
+      const byCandidate = {};
+      if (Array.isArray(data)) {
+        // expected canonical format: [{candidateId, count}, ...]
+        data.forEach(item => {
+          if (item && typeof item === 'object') {
+            if (item.candidateId !== undefined && item.count !== undefined) {
+              byCandidate[item.candidateId] = Number(item.count);
+            } else if (item[0] !== undefined && item[1] !== undefined) {
+              byCandidate[item[0]] = Number(item[1]);
+            } else if (item.key !== undefined && item.value !== undefined) {
+              byCandidate[item.key] = Number(item.value);
+            }
+          }
+        });
+      } else if (data && typeof data === 'object') {
+        // allow object map {candidate:count}
+        Object.entries(data).forEach(([k,v]) => byCandidate[k] = Number(v));
+      }
+
+      if (mounted && Object.keys(byCandidate).length > 0) {
+        setPresVotes({ byCandidate });
+      }
+    };
+
+    (async () => {
+      try {
+        const res = await fetch('http://localhost:8081/admin/votes/summary', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          updateFromPayload(data);
+        }
+      } catch (err) {
+        // ignore, keep simulated
+      }
+    })();
+
+    // SSE subscription to receive live updates (init/update)
+    let es;
+    try {
+      es = new EventSource('http://localhost:8081/admin/votes/stream');
+      const handler = (ev) => {
+        try {
+          const payload = JSON.parse(ev.data);
+          updateFromPayload(payload);
+        } catch (e) {
+          // ignore parse errors
+        }
+      };
+      es.addEventListener('init', handler);
+      es.addEventListener('update', handler);
+      es.onerror = () => {
+        try { es.close(); } catch (e) {}
+      };
+    } catch (e) {
+      // EventSource might fail in environments without CORS/auth; ignore and rely on polling/fetch
+    }
+
+    // Simulate mesas escrutadas only (do not alter votes)
+    const mesasInterval = setInterval(() => {
+      // update a local counter used below
+    }, 2000);
+
+    return () => { mounted = false; try { if (es) es.close(); } catch (_) {}; clearInterval(mesasInterval); };
+  }, [selectedRegion]);
+
   const provincesInitialData = useMemo(() => ({ byProvince: getProvincesForRegion(selectedRegion) }), [selectedRegion]);
   const { liveData: provincesLiveData } = useLiveData(provincesInitialData);
-  const { liveData: finalPresData, mesasEscrutadas } = useLiveData({ byCandidate: presVotes.byCandidate });
+  const finalPresData = { byCandidate: presVotes.byCandidate };
+  const [mesasEscrutadas, setMesasEscrutadas] = useState(1200);
+  useEffect(() => {
+    const interval = setInterval(() => setMesasEscrutadas(prev => prev + 1), 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   const totalVotos = Object.values(finalPresData.byCandidate).reduce((a,b)=>a+b,0);
   const sortedCandidates = Object.entries(finalPresData.byCandidate).sort(([,a], [,b]) => b - a);

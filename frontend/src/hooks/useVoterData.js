@@ -63,17 +63,38 @@ export const useVoterData = () => {
     setIsLoading(true);
     setError(null);
     setVoterData(null);
-    
-    // Simular una llamada a API
-    setTimeout(() => {
-      const data = mockVoters[dni];
-      if (data) {
-        setVoterData(data);
-      } else {
-        setError('DNI no encontrado. Verifique el número e intente de nuevo.');
-      }
-      setIsLoading(false);
-    }, 1500);
+
+    // Llamada real al backend `/dni/{dni}`; si falla, caemos al mock local
+    fetch(`http://localhost:8082/dni/${dni}`, { method: 'GET' })
+      .then(async (res) => {
+        if (!res.ok) {
+          // fallback to mock
+          const data = mockVoters[dni];
+          if (data) {
+            setVoterData(data);
+          } else {
+            setError('DNI no encontrado o servicio no disponible.');
+          }
+        } else {
+          const body = await res.json();
+          // Map backend response to voterData shape expected by UI
+          const uiData = {
+            name: (body.nombre ? `${body.nombre} ${body.apellido || ''}`.trim() : ''),
+            district: body.direccion || 'Desconocido',
+            status: 'Habilitado para votar',
+          };
+          setVoterData(uiData);
+        }
+      })
+      .catch(() => {
+        const data = mockVoters[dni];
+        if (data) {
+          setVoterData(data);
+        } else {
+          setError('DNI no encontrado o servicio no disponible.');
+        }
+      })
+      .finally(() => setIsLoading(false));
   };
 
   return {

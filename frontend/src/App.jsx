@@ -20,7 +20,6 @@ const LoadingScreen = () => (
   </div>
 );
 
-// Tarjeta optimizada para ambos temas
 const StepCard = ({ icon: Icon, title, description }) => (
   <div className="h-full">
     <Card className="bg-card/80 border-primary/20 text-center h-full hover:border-primary/50 transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 group">
@@ -28,7 +27,6 @@ const StepCard = ({ icon: Icon, title, description }) => (
         <div className="mx-auto bg-primary/10 text-primary rounded-full h-20 w-20 flex items-center justify-center mb-4 border border-primary/30 shadow-inner group-hover:scale-110 transition-transform">
           <Icon className="h-10 w-10" />
         </div>
-        {/* Título adaptable (Blanco suave en Dark, Oscuro en Light) */}
         <CardTitle className="text-xl md:text-2xl font-bold text-foreground">{title}</CardTitle>
       </CardHeader>
       <CardContent>
@@ -48,10 +46,14 @@ function App() {
 
   useEffect(() => {
     const stored = localStorage.getItem('isAdmin');
-    if (stored === 'true') setIsAdmin(true);
+    if (stored === 'true') {
+      setIsAdmin(true);
+      setView('admin'); 
+    }
   }, []);
 
   if (view === 'selection') return <Suspense fallback={<LoadingScreen />}><ElectionSelection onGoBack={handleGoBack} /></Suspense>;
+  
   if (view === 'admin' && isAdmin) return <Suspense fallback={<LoadingScreen />}><AdminLayout onLogout={() => { localStorage.removeItem('isAdmin'); setIsAdmin(false); setView('landing'); }} /></Suspense>;
 
   return (
@@ -109,7 +111,6 @@ function App() {
               </p>
               
               <div className="pt-4">
-                {/* Botón Principal adaptado */}
                 <Button
                   onClick={() => setView('user-verification')}
                   className="h-16 px-12 text-xl font-bold rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all hover:scale-105 active:scale-95 bg-primary text-primary-foreground hover:bg-primary/90"

@@ -2,19 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Vote, UserCheck } from 'lucide-react';
 
+// Keep recent activity focused on non-vote actions (do not show votes here)
 const mockEvents = [
-  { type: 'Voto', user: '45****78', region: 'Lima', icon: Vote, color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' },
   { type: 'Consulta', user: '10****56', region: 'Cusco', icon: UserCheck, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-  { type: 'Voto', user: '71****23', region: 'Arequipa', icon: Vote, color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' },
+  { type: 'Verificación', user: '12****34', region: 'Lima', icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
+  { type: 'Consulta', user: '33****99', region: 'Arequipa', icon: UserCheck, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
 ];
 
 function getRandomEvent() {
-  const event = mockEvents[Math.floor(Math.random() * mockEvents.length)];
+  // Only pick events that are not 'Voto'
+  const filtered = mockEvents.filter(e => e.type !== 'Voto');
+  const event = filtered[Math.floor(Math.random() * filtered.length)];
   return { ...event, id: Date.now(), time: new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) };
 }
 
 export default function ActivityFeed() {
-  const [events, setEvents] = useState([{ ...mockEvents[0], id: 1, time: new Date().toLocaleTimeString() }]);
+  // Only use non-vote events for initial state
+  const initialEvent = mockEvents.find(e => e.type !== 'Voto');
+  const [events, setEvents] = useState([{ ...initialEvent, id: 1, time: new Date().toLocaleTimeString() }]);
 
   useEffect(() => {
     const interval = setInterval(() => {

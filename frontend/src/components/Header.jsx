@@ -23,7 +23,7 @@ const Header = ({ onAdminOpen }) => {
           
           {/* Logo */}
           <div className="flex items-center gap-2 cursor-pointer select-none" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
-            <img src="https://upload.wikimedia.org/wikipedia/commons/9/9e/Escudo_nacional_del_Per%C3%BA.svg" alt="Peru" className="h-9 w-9" />
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSRIUGHmmvzAtdasL-FzQkst2AWVYdv89gdjQ&s.png" className="h-9 w-9" />
             <div className="flex flex-col leading-none">
               <span className="font-bold text-foreground text-lg">Votación</span>
               <span className="text-[10px] text-muted-foreground tracking-widest uppercase">República del Perú</span>
